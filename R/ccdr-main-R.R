@@ -74,7 +74,9 @@ NULL
 #' }
 #'
 #' @export
-ccdr.run <- function(data,
+ccdr.run <- function(data, ## now append a column indicating which node (1, ..., pp) is fixed; pp+1 means no intervention
+                           ## if necessary, sort it
+                           ## maybe add another wrapper
                      betas,
                      lambdas,
                      lambdas.length = NULL,
@@ -85,7 +87,7 @@ ccdr.run <- function(data,
                      verbose = FALSE
 ){
     ### This is just a wrapper for the internal implementation given by ccdr_call
-    ccdr_call(data = data,
+    ccdr_call(data = data, ## now append a column indicating which node (1, ..., pp) is fixed; pp+1 means no intervention
               betas = betas,
               lambdas = lambdas,
               lambdas.length = lambdas.length,
@@ -103,7 +105,7 @@ ccdr.run <- function(data,
 #    passing to ccdr_gridR and ccdr_singleR. Some type-checking as well, although most of
 #    this is handled internally by ccdr_gridR and ccdr_singleR.
 #
-ccdr_call <- function(data,
+ccdr_call <- function(data, ## now append a column indicating which node is fixed
                       betas,
                       lambdas,
                       lambdas.length,
@@ -120,7 +122,17 @@ ccdr_call <- function(data,
 
     ### Get the dimensions of the data matrix
     nn <- as.integer(nrow(data))
-    pp <- as.integer(ncol(data))
+    pp <- as.integer(ncol(data)) - 1
+
+    ## count rows where node j is not fixed
+    intervention <- data[, pp + 1]
+    ## check intervention
+    if(any(is.integer(intervention)) || any(intervention <= 0) || any(intervention > pp + 1)) stop("Intervention labels are incorrect!")
+    
+    nj <- rep(0, pp + 1)
+    for(j in 0:pp) { ## include 0 here or not? will drop nj[0] when passing to internal calculations
+        nj[j + 1] <- sum(intervention != j) ## optimize for sorted column?
+    }
 
     ### Use default values for lambda if not specified
     if(missing(lambdas)){
@@ -180,12 +192,13 @@ ccdr_call <- function(data,
     t1.cor <- proc.time()[3]
     #     cors <- cor(data)
     #     cors <- cors[upper.tri(cors, diag = TRUE)]
-    cors <- cor_vector(data)
+    cors <- cor_vector_intervention(data) ## cors <- cor_vector(data)
     t2.cor <- proc.time()[3]
 
-    fit <- ccdr_gridR(cors,
+    fit <- ccdr_gridR(cors, ## now a longer vector
                       as.integer(pp),
                       as.integer(nn),
+                      as.integer(nj), ## added nj
                       betas,
                       as.numeric(lambdas),
                       as.numeric(gamma),
@@ -201,8 +214,8 @@ ccdr_call <- function(data,
 # ccdr_gridR
 #
 #   Main subroutine for running the CCDr algorithm on a grid of lambda values.
-ccdr_gridR <- function(cors,
-                       pp, nn,
+ccdr_gridR <- function(cors, ## now a longer vector
+                       pp, nn, nj, ## added nj
                        betas,
                        lambdas,
                        gamma,
@@ -224,8 +237,8 @@ ccdr_gridR <- function(cors,
         if(verbose) message("Working on lambda = ", round(lambdas[i], 5), " [", i, "/", nlam, "]")
 
         t1.ccdr <- proc.time()[3]
-        ccdr.out[[i]] <- ccdr_singleR(cors,
-                                      pp, nn,
+        ccdr.out[[i]] <- ccdr_singleR(cors, ## now a longer vector
+                                      pp, nn, nj, ## now added nj
                                       betas,
                                       lambdas[i],
                                       gamma = gamma,
@@ -259,8 +272,8 @@ ccdr_gridR <- function(cors,
 #
 #   Internal subroutine for handling calls to singleCCDr: This is the only place where C++ is directly
 #    called. Type-checking is strongly enforced here.
-ccdr_singleR <- function(cors,
-                         pp, nn,
+ccdr_singleR <- function(cors, ## now a longer vector
+                         pp, nn, nj, ## added nj
                          betas,
                          lambda,
                          gamma,
@@ -272,11 +285,22 @@ ccdr_singleR <- function(cors,
 
     ### Check cors
     if(!is.numeric(cors)) stop("cors must be a numeric vector!")
-    if(length(cors) != pp*(pp+1)/2) stop(paste0("cors has incorrect length: Expected length = ", pp*(pp+1)/2, " input length = ", length(cors)))
+    if(length(cors) != (pp+1)*pp*(pp+1)/2) stop(paste0("cors has incorrect length: Expected length = ", (pp+1)*pp*(pp+1)/2, " input length = ", length(cors)))
+    ## longer due to intervention
 
     ### Check dimension parameters
     if(!is.integer(pp) || !is.integer(nn)) stop("Both pp and nn must be integers!")
     if(pp <= 0 || nn <= 0) stop("Both pp and nn must be positive!")
+    
+    ## check nj
+    if(any(!is.integer(nj)) || any(nj < 0)) stop("nj must be non-negative integers!")
+    if(length(nj) != pp + 1 || sum(nj) - 2 * nj[1] != (pp-1) * nn) stop(paste0("nj size does not match:", paste(nj, collapse = ", "), ". Check it out."))
+    ## is this necessary
+    
+    ## now we can drop nj[0]
+    print(nj)
+    nj <- nj[-1]
+    print(nj)
 
     ### Check betas
     if(check_if_matrix(betas)){ # if the input is a matrix, convert to SBM object
@@ -311,7 +335,7 @@ ccdr_singleR <- function(cors,
     t1.ccdr <- proc.time()[3]
     ccdr.out <- singleCCDr(cors,
                            betas,
-                           nn,
+                           nn, nj, ## now added nj
                            lambda,
                            c(gamma, eps, maxIters, alpha),
                            verbose = verbose)
@@ -325,7 +349,7 @@ ccdr_singleR <- function(cors,
                      lambda = ccdr.out$lambda,
                      nedge = ccdr.out$length,
                      pp = pp,
-                     nn = nn,
+                     nn = nn, ## do we need to include nj here?
                      time = t2.ccdr - t1.ccdr)
     ccdr.out$sbm <- reIndexR(ccdr.out$sbm)
 

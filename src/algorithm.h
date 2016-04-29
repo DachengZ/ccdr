@@ -55,8 +55,10 @@ double ZERO_THRESH = 1e-12;
 
 // prototype for gridCCDr
 std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,    // array containing the correlations between predictors
+                                                                            // now longer due to intervention added
                                         SparseBlockMatrix betas,            // initial guess of beta matrix
                                         const unsigned int nn,              // # of rows in data matrix
+                                        const std::vector<int>& nj,         // # of rows where node j is not fixed
                                         const std::vector<double>& lambdas, // vector containing the grid of regularization parameters to be tested
                                         const std::vector<double>& params,  // vector containing user-defined parameters: {gamma, eps, maxIters, alpha}
                                         const int verbose                   // binary variable to specify whether or not to print progress reports
@@ -64,8 +66,10 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,    // a
 
 // prototype for singleCCDr
 SparseBlockMatrix singleCCDr(const std::vector<double>& cors,   // array containing the correlations between predictors
+                                                                // now longer due to intervention added
                              SparseBlockMatrix betas,           // initial guess of beta matrix
                              const unsigned int nn,             // # of rows in data matrix
+                             const std::vector<int>& nj,        // # of rows where node j is not fixed
                              const double lambda,               // value of regularization parameter
                              const std::vector<double>& params, // vector containing user-defined parameters: {gamma, eps, maxIters, alpha}
                              const int verbose                  // binary variable to specify whether or not to print progress reports
@@ -77,6 +81,7 @@ void computeEdgeLoss(const double betaUpdate,           // proposed new value of
                      const unsigned int b,              // terminal node (i.e. update beta_ab)
                      const double lambda,               // value of regularization parameter
                      const unsigned int nn,             // # of rows in data matrix
+                     const std::vector<int>& nj,        // # of rows where node j is not fixed
                      SparseBlockMatrix& betas,          // current value of beta matrix
                      const PenaltyFunction& pen,        // penalty function
                      const std::vector<double>& cors,   // array containing the correlations between predictors
@@ -87,6 +92,7 @@ void computeEdgeLoss(const double betaUpdate,           // proposed new value of
 // prototype for concaveCDInit
 void concaveCDInit(const double lambda,                         // value of regularization parameter
                    const unsigned int nn,                       // # of rows in data matrix
+                   const std::vector<int>& nj,                  // # of rows where node j is not fixed
                    SparseBlockMatrix& betas,                    // current value of beta matrix
                    CCDrAlgorithm& alg,                          // CCDrAlgorithm object for this run
                    const PenaltyFunction& pen,                  // penalty function
@@ -97,6 +103,7 @@ void concaveCDInit(const double lambda,                         // value of regu
 // prototype for concaveCD
 void concaveCD(const double lambda,                             // value of regularization parameter
                const unsigned int nn,                           // # of rows in data matrix
+               const std::vector<int>& nj,                      // # of rows where node j is not fixed
                SparseBlockMatrix& betas,                        // current value of beta matrix
                CCDrAlgorithm& alg,                              // CCDrAlgorithm object for this run
                const PenaltyFunction& pen,                      // penalty function
@@ -109,6 +116,7 @@ double singleUpdate(const unsigned int a,                       // initial node 
                     const unsigned int b,                       // terminal node (i.e. update beta_ab)
                     const double lambda,                        // value of regularization parameter
                     const unsigned int nn,                      // # of rows in data matrix
+                    const std::vector<int>& nj,                 // # of rows where node j is not fixed
                     const SparseBlockMatrix& betas,             // current value of beta matrix
                     const PenaltyFunction& pen,                 // penalty function
                     const std::vector<double>& cors,            // array containing the correlations between predictors
@@ -120,6 +128,7 @@ double singleUpdateV(const unsigned int a,                       // initial node
                      const unsigned int b,                       // terminal node (i.e. update beta_ab)
                      const double lambda,                        // value of regularization parameter
                      const unsigned int nn,                      // # of rows in data matrix
+                     const std::vector<int>& nj,                 // # of rows where node j is not fixed
                      SparseBlockMatrix& betas,                   // current value of beta matrix
                      const PenaltyFunction& pen,                 // penalty function
                      const std::vector<double>& cors,            // array containing the correlations between predictors
@@ -152,6 +161,7 @@ bool checkCycleSparse(const int node,                    // number of nodes in g
 std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
                                         SparseBlockMatrix betas,
                                         const unsigned int nn,
+                                        const std::vector<int>& nj, // added nj
                                         const std::vector<double>& lambdas,
                                         const std::vector<double>& params,
                                         const int verbose
@@ -182,7 +192,7 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
 
         // To save memory, simply overwrite the same object (betas)
         // After each call to singleCCDr, we push_back the estimated object to grid_betas so there is no loss of data
-        betas = singleCCDr(cors, betas, nn, lambda, params, verbose);
+        betas = singleCCDr(cors, betas, nn, nj, lambda, params, verbose); // added nj
         grid_betas.push_back(betas);
 
         //--- VERBOSE ONLY ---//
@@ -229,6 +239,7 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
 SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
                              SparseBlockMatrix betas,
                              const unsigned int nn,
+                             const std::vector<int>& nj, // added nj
                              const double lambda,
                              const std::vector<double>& params,
                              const int verbose
@@ -273,7 +284,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
         CCDR.resetFlags();
 
         // This pass runs over all blocks
-        concaveCDInit(lambda, nn, betas, CCDR, MCP, cors, verbose);
+        concaveCDInit(lambda, nn, nj, betas, CCDR, MCP, cors, verbose);
 
         //
         // ADD EXTRA ALGORITHM CHECKS HERE IF NEEDED
@@ -285,7 +296,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
             // block for running the rest of the CD iterations over the given active set
             int iters = 1; // we already ran one pass to determine the active set
             while( CCDR.moar(iters)){
-                concaveCD(lambda, nn, betas, CCDR, MCP, cors, verbose);
+                concaveCD(lambda, nn, nj, betas, CCDR, MCP, cors, verbose);
                 iters++;
             }
         }
@@ -336,6 +347,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
 //
 void concaveCDInit(const double lambda,
                    const unsigned int nn,
+                   const std::vector<int>& nj, // added nj
                    SparseBlockMatrix& betas,
                    CCDrAlgorithm& alg,
                    const PenaltyFunction& pen,
@@ -360,27 +372,30 @@ void concaveCDInit(const double lambda,
     // Compute sigmas
     //   See Section 4.2.2. of the computational paper for the details of this calculation
     //
-    for(unsigned int j = 0; j < betas.dim(); ++j){
+    unsigned int pp = betas.dim(); // # of nodes; moved from below; save for easier access
+    for(unsigned int j = 0; j < pp; ++j){
 
         double c = 0;
         for(unsigned int l = 0; l < betas.rowsizes(j); ++l){
             unsigned int row = betas.row(j, l);
-
+            // so that row = i such that phi_{ij} != 0
+            // now only use rows where node j is not fixed
             if(j <= row){
-                c += betas.value(j, l) * cors[(j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
+                c += betas.value(j, l) * cors[(j+1)*pp*(pp+1)/2 + (j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
             }
             else{
-                c += betas.value(j, l) * cors[(row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
+                c += betas.value(j, l) * cors[(j+1)*pp*(pp+1)/2 + (row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
             }
         }
 
-        double s = 0.5 * (1.0 * c + sqrt(c * c + 4 * nn));
+        double s = 0.5 * (1.0 * c + sqrt(c * c + 4 * nj[j])); // change nn to nj[j]
+        // is it nj[j] or nj[j-1]
         betas.setSigma(j, s);
     } // end for loop for sigmas
 
     #ifdef _DEBUG_ON_
         std::ostringstream sigma_out;
-        for(int jj = 0; jj < betas.dim(); ++jj){
+        for(int jj = 0; jj < pp; ++jj){
             sigma_out << betas.sigma(jj) << " ";
         }
         FILE_LOG(logDEBUG1) << "Estimated sigmas: " << sigma_out.str();
@@ -397,12 +412,12 @@ void concaveCDInit(const double lambda,
     //        For example, edges in the first row (resp. first column) are much more likely to be nonzero than later edges.
     //        Consider how to fix this, e.g. by RANDOMIZING the order of the updates.
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    unsigned int pp = betas.dim();
+    //unsigned int pp = betas.dim(); // moved to above
     for(unsigned int i = 0; i < pp; ++i){
     	for(unsigned int j = i + 1; j < pp; ++j){
 
-            double betaUpdateij = singleUpdate(i, j, lambda, nn, betas, pen, cors, verbose);
-            double betaUpdateji = singleUpdate(j, i, lambda, nn, betas, pen, cors, verbose);
+            double betaUpdateij = singleUpdate(i, j, lambda, nn, nj, betas, pen, cors, verbose); // or only use nj[j]?
+            double betaUpdateji = singleUpdate(j, i, lambda, nn, nj, betas, pen, cors, verbose); // or only use nj[i]?
             bool hasCycleij = false, hasCycleji = false;
 
             if(fabs(betaUpdateij) > ZERO_THRESH){
@@ -422,7 +437,7 @@ void concaveCDInit(const double lambda,
                 betaUpdateji = 0.0;
             } else{
                 // single parameter update for beta_ji
-                computeEdgeLoss(betaUpdateji, j, i, lambda, nn, betas, pen, cors, S, verbose);
+                computeEdgeLoss(betaUpdateji, j, i, lambda, nn, nj, betas, pen, cors, S, verbose);
                 double S1ji = S[0]; // Qi|betaji=0
                 double S2ji = S[1]; // Qi|betaji=betaUpdate
 
@@ -431,7 +446,7 @@ void concaveCDInit(const double lambda,
             #endif
 
                 // single parameter update for beta_ij
-                computeEdgeLoss(betaUpdateij, i, j, lambda, nn, betas, pen, cors, S, verbose);
+                computeEdgeLoss(betaUpdateij, i, j, lambda, nn, nj, betas, pen, cors, S, verbose);
                 double S1ij = S[1]; // Qj|betaij=betaUpdate
                 double S2ij = S[0]; // Qj|betaij=0
 
@@ -580,6 +595,7 @@ void concaveCDInit(const double lambda,
 //
 void concaveCD(const double lambda,
                const unsigned int nn,
+               const std::vector<int>& nj,
                SparseBlockMatrix& betas,
                CCDrAlgorithm& alg,
                const PenaltyFunction& pen,
@@ -603,26 +619,27 @@ void concaveCD(const double lambda,
     // Compute sigmas
     //   See Section 4.2.2. for the details of this calculation
     //
-    for(unsigned int j = 0; j < betas.dim(); ++j){
+    unsigned int pp = betas.dim(); // moved from below
+    for(unsigned int j = 0; j < pp; ++j){
         double c = 0;
         for(unsigned int l = 0; l < betas.rowsizes(j); ++l){
             unsigned int row = betas.row(j, l);
-
+            // only uses rows where node j is not fixed
             if(j <= row){
-                c += betas.value(j, l) * cors[(j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
+                c += betas.value(j, l) * cors[(j+1)*pp*(pp+1)/2 + (j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
             }
             else{
-                c += betas.value(j, l) * cors[(row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
+                c += betas.value(j, l) * cors[(j+1)*pp*(pp+1)/2 + (row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
             }
         }
 
-        double s = 0.5 * (1.0 * c + sqrt(c * c + 4 * nn));
+        double s = 0.5 * (1.0 * c + sqrt(c * c + 4 * nj[j])); // change nn to nj[j]
         betas.setSigma(j, s);
     } // end for loop for sigmas
 
     #ifdef _DEBUG_ON_
         std::ostringstream sigma_out;
-        for(int jj = 0; jj < betas.dim(); ++jj){
+        for(int jj = 0; jj < pp; ++jj){
             sigma_out << betas.sigma(jj) << " ";
         }
         FILE_LOG(logDEBUG1) << "Estimated sigmas: " << sigma_out.str();
@@ -630,7 +647,7 @@ void concaveCD(const double lambda,
         FILE_LOG(logDEBUG4) << "Computing betas...";
     #endif
 
-    unsigned int pp = betas.dim();
+    // unsigned int pp = betas.dim(); // moved to above
     for(unsigned int j = 0; j < pp; ++j){
     	for(unsigned int rowIdx = 0; rowIdx < betas.rowsizes(j); ++rowIdx){
             unsigned int i = betas.row(j, rowIdx); // get the row from the sparse structure
@@ -653,9 +670,9 @@ void concaveCD(const double lambda,
 
             // only update the nonzero edge
             if(fabs(betakj) > ZERO_THRESH){
-                betaUpdateij = singleUpdate(i, j, lambda, nn, betas, pen, cors, verbose);
+                betaUpdateij = singleUpdate(i, j, lambda, nn, nj, betas, pen, cors, verbose);
             } else if(fabs(betajk) > ZERO_THRESH){
-                betaUpdateji = singleUpdate(j, i, lambda, nn, betas, pen, cors, verbose);
+                betaUpdateji = singleUpdate(j, i, lambda, nn, nj, betas, pen, cors, verbose);
             }
 
             //
@@ -694,6 +711,7 @@ double singleUpdate(const unsigned int a,
                     const unsigned int b,
                     const double lambda,
                     const unsigned int nn,
+                    const std::vector<int>& nj,
                     const SparseBlockMatrix& betas,
                     const PenaltyFunction& pen,
                     const std::vector<double>& cors,
@@ -705,6 +723,7 @@ double singleUpdate(const unsigned int a,
         spu_calls++;
     #endif
 
+    unsigned int pp = betas.dim(); // for easier access
     double betaUpdate = 0; // initialize eventual return value
 
     //
@@ -717,20 +736,20 @@ double singleUpdate(const unsigned int a,
 
     // Get the value: \rho_j*<xk,xj>
     if(a <= b){
-        res_ab = betas.sigma(b) * cors[(a + b*(b+1)/2)];
+        res_ab = betas.sigma(b) * cors[(b+1)*pp*(pp+1)/2 + (a + b*(b+1)/2)];
     }
     else{
-        res_ab = betas.sigma(b) * cors[(b + a*(a+1)/2)];
+        res_ab = betas.sigma(b) * cors[(b+1)*pp*(pp+1)/2 + (b + a*(a+1)/2)];
     }
 
     // Subtract the terms \phi_ij <xi,xk>
     for(unsigned int i = 0; i < betas.rowsizes(b); ++i){
         unsigned int row = betas.row(b, i);
         if(row < a){
-            res_ab -= cors[(row + a*(a+1)/2)] * betas.value(b, i);
+            res_ab -= cors[(b+1)*pp*(pp+1)/2 + (row + a*(a+1)/2)] * betas.value(b, i);
         }
         else if(row > a){ // i=a is excluded
-            res_ab -= cors[(a + row*(row+1)/2)] * betas.value(b, i);
+            res_ab -= cors[(b+1)*pp*(pp+1)/2 + (a + row*(row+1)/2)] * betas.value(b, i);
         }
     }
 
@@ -756,6 +775,7 @@ void computeEdgeLoss(const double betaUpdate,
                      const unsigned int b,
                      const double lambda,
                      const unsigned int nn,
+                     const std::vector<int>& nj,
                      SparseBlockMatrix& betas,
                      const PenaltyFunction& pen,
                      const std::vector<double>& cors,
@@ -790,24 +810,25 @@ void computeEdgeLoss(const double betaUpdate,
 #endif
 
     // Compute the value of the loss
+    unsigned int pp = betas.dim();
     loss = betas.sigma(b) * betas.sigma(b);
     for(unsigned int m = 0; m < betas.rowsizes(b); ++m){
         unsigned int row_m = betas.row(b, m);
 
         for(unsigned int n = 0; n < betas.rowsizes(b); ++n){
             unsigned int row_n = betas.row(b, n);
-
+            // not quite sure if it is b here.
             if(row_m <= row_n){
-                loss += cors[(row_m + row_n*(row_n+1)/2)] * betas.value(b, m) * betas.value(b, n);
+                loss += cors[(b+1)*pp*(pp+1)/2 + (row_m + row_n*(row_n+1)/2)] * betas.value(b, m) * betas.value(b, n);
             } else{
-                loss += cors[(row_n + row_m*(row_m+1)/2)] * betas.value(b, m) * betas.value(b, n);
+                loss += cors[(b+1)*pp*(pp+1)/2 + (row_n + row_m*(row_m+1)/2)] * betas.value(b, m) * betas.value(b, n);
             }
         }
 
         if(row_m <= b){
-            loss -= 2.0 * betas.sigma(b) * cors[(row_m + b*(b+1)/2)] * betas.value(b, m);
+            loss -= 2.0 * betas.sigma(b) * cors[(b+1)*pp*(pp+1)/2 + (row_m + b*(b+1)/2)] * betas.value(b, m);
         } else{
-            loss -= 2.0 * betas.sigma(b) * cors[(b + row_m*(row_m+1)/2)] * betas.value(b, m);
+            loss -= 2.0 * betas.sigma(b) * cors[(b+1)*pp*(pp+1)/2 + (b + row_m*(row_m+1)/2)] * betas.value(b, m);
         }
     }
 
@@ -819,7 +840,7 @@ void computeEdgeLoss(const double betaUpdate,
     //penalty -= pen.p(fabs(betas[(pp * b) + b]), lambda); // ignore contribution from beta_bb (should be zero anyway!!!)
 
     // S[0] = value of the likelihood with beta_ab = 0
-    S[0] = -1.0 * nn * log(betas.sigma(b)) + 0.5 * loss + penalty;
+    S[0] = -1.0 * nj[b] * log(betas.sigma(b)) + 0.5 * loss + penalty; // change nn to nj[b] // didn't notice here first
 
     //
     // S[1] = value of the likelihood with beta_ab = betaUpdate
@@ -839,19 +860,19 @@ void computeEdgeLoss(const double betaUpdate,
             unsigned int row = betas.row(b, i);
 
             if(row < a){
-                S[1] += 2.0 * cors[(row + a*(a+1)/2)] * betas.value(b, i) * betaUpdate;
+                S[1] += 2.0 * cors[(b+1)*pp*(pp+1)/2 + (row + a*(a+1)/2)] * betas.value(b, i) * betaUpdate;
             }
             else if(i > a){ // case when i = a is handled separately below
-                S[1] += 2.0 * cors[(a + row*(row+1)/2)] * betas.value(b, i) * betaUpdate;
+                S[1] += 2.0 * cors[(b+1)*pp*(pp+1)/2 + (a + row*(row+1)/2)] * betas.value(b, i) * betaUpdate;
             }
         }
-        S[1] += cors[(a + a*(a+1)/2)] * betaUpdate * betaUpdate;
+        S[1] += cors[(b+1)*pp*(pp+1)/2 + (a + a*(a+1)/2)] * betaUpdate * betaUpdate;
 
         if(a <= b){
-            S[1] -= 2.0 * betas.sigma(b) * cors[(a + b*(b+1)/2)] * betaUpdate;
+            S[1] -= 2.0 * betas.sigma(b) * cors[(b+1)*pp*(pp+1)/2 + (a + b*(b+1)/2)] * betaUpdate;
         }
         else{
-            S[1] -= 2.0 * betas.sigma(b) * cors[(b + a*(a+1)/2)] * betaUpdate;
+            S[1] -= 2.0 * betas.sigma(b) * cors[(b+1)*pp*(pp+1)/2 + (b + a*(a+1)/2)] * betaUpdate;
         }
 
         // Of course the penalty decomposes like the loss as well, so we can just add

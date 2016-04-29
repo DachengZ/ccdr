@@ -81,3 +81,28 @@ cor_vector <- function(X){
 
     cors
 } # END .COR_VECTOR
+
+cor_vector_intervention <- function(X) {
+## Similar to cor_vector
+## Now there are interventions
+    check.numeric <- (col_classes(X) != "numeric")
+    if( any(check.numeric)){
+        not.numeric <- which(check.numeric)
+        stop(paste0("Input columns must be numeric! Columns ", paste(not.numeric, collapse = ", "), " are non-numeric."))
+    }
+
+    if( any(dim(X) < 2)){
+        stop("Input must have at least 2 rows and columns!") # 2-8-15: Why do we check this here?
+    }
+
+    pp <- ncol(X) - 1
+    cors <- vector("list", pp + 1)
+    vfix <- X[, pp + 1]
+    for(j in 0:pp) {
+        XOj <- X[vfix != j, 1:pp]
+        corsj <- cor(XOj)
+        cors[[j + 1]] <- corsj[upper.tri(corsj, diag = TRUE)]
+    }
+    cors <- unlist(cors)
+    return(cors)
+} # END .COR_VECTOR_INTERVETION
