@@ -96,12 +96,14 @@ cor_vector_intervention <- function(X) {
     }
 
     pp <- ncol(X) - 1
-    cors <- vector("list", pp + 1)
-    vfix <- X[, pp + 1]
-    for(j in 0:pp) {
-        XOj <- X[vfix != j, 1:pp]
+    intervention <- X[, pp + 1]
+    X <- X[, 1:pp]
+    cors <- vector("list", pp) ## change from pp+1 to pp
+
+    for(j in 1:pp) {
+        XOj <- X[intervention != j, ]
         corsj <- cor(XOj)
-        cors[[j + 1]] <- corsj[upper.tri(corsj, diag = TRUE)]
+        cors[[j]] <- corsj[upper.tri(corsj, diag = TRUE)]
     }
     cors <- unlist(cors)
     return(cors)

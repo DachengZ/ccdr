@@ -86,7 +86,6 @@ List gridCCDr(NumericVector cors,
 // [[Rcpp::export]]
 List singleCCDr(NumericVector cors,
                 List init_betas,
-                unsigned int nn,
                 IntegerVector nj, // added nj
                 double lambda,
                 NumericVector params,
@@ -97,7 +96,7 @@ List singleCCDr(NumericVector cors,
 
     betas = singleCCDr(as< std::vector<double> >(cors),
                        betas,
-                       nn,
+                       //nn,
                        as< std::vector<int> >(nj), // added nj
                        lambda,
                        as< std::vector<double> >(params),

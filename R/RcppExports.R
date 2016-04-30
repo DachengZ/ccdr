@@ -5,7 +5,7 @@ gridCCDr <- function(cors, init_betas, nn, nj, lambdas, params, verbose) {
     .Call('ccdr_gridCCDr', PACKAGE = 'ccdr', cors, init_betas, nn, nj, lambdas, params, verbose)
 }
 
-singleCCDr <- function(cors, init_betas, nn, nj, lambda, params, verbose) {
-    .Call('ccdr_singleCCDr', PACKAGE = 'ccdr', cors, init_betas, nn, nj, lambda, params, verbose)
+singleCCDr <- function(cors, init_betas, nj, lambda, params, verbose) {
+    .Call('ccdr_singleCCDr', PACKAGE = 'ccdr', cors, init_betas, nj, lambda, params, verbose)
 }
 
