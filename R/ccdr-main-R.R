@@ -127,7 +127,7 @@ ccdr_call <- function(data, ## now append a column indicating which node is fixe
     ## count rows where node j is not fixed
     intervention <- data[, pp + 1]
     ## check intervention
-    if(any(is.integer(intervention)) || any(intervention <= 0) || any(intervention > pp + 1)) stop("Intervention labels are incorrect!")
+    if(any(is.integer(intervention)) || any(intervention <= 0) || any(intervention > pp + 1)) paste0("Intervention labels are incorrect!")
 
     nj <- rep(0, pp)
     for(j in 1:pp) { ## include 0 here or not?
@@ -198,7 +198,8 @@ ccdr_call <- function(data, ## now append a column indicating which node is fixe
     ## then pass data and intervention label separately
     t2.cor <- proc.time()[3]
 
-    fit <- ccdr_gridR(cors, ## now a longer vector
+    fit <- ccdr_gridR(cors = cors, ## now a longer vector
+                      # data = data,
                       as.integer(pp),
                       as.integer(nn), ## can we replace nn with nj now?
                       as.integer(nj), ## added nj
@@ -218,6 +219,7 @@ ccdr_call <- function(data, ## now append a column indicating which node is fixe
 #
 #   Main subroutine for running the CCDr algorithm on a grid of lambda values.
 ccdr_gridR <- function(cors, ## now a longer vector
+                       # data,
                        pp, nn, ##
                        nj, ## added nj
                        betas,
@@ -241,7 +243,7 @@ ccdr_gridR <- function(cors, ## now a longer vector
         if(verbose) message("Working on lambda = ", round(lambdas[i], 5), " [", i, "/", nlam, "]")
 
         t1.ccdr <- proc.time()[3]
-        ccdr.out[[i]] <- ccdr_singleR(cors, ## now a longer vector
+        ccdr.out[[i]] <- ccdr_singleR(cors = cors, ## now a longer vector
                                       pp, nn, ##
                                       nj, ## now added nj
                                       betas,
@@ -254,14 +256,29 @@ ccdr_gridR <- function(cors, ## now a longer vector
         )
         t2.ccdr <- proc.time()[3]
 
-        betas <- ccdr.out[[i]]$sbm
-        betas <- reIndexC(betas) # use C-friendly indexing
+        sbm <- ccdr.out[[i]]$sbm
+        betas <- reIndexC(sbm) # use C-friendly indexing
 
         if(verbose){
             test.nedge <- sum(as.matrix(betas) != 0)
             message("  Estimated number of edges: ", ccdr.out[[i]]$nedge, " / test = ", test.nedge)
             # message("  Estimated total variance: ", sum(1 / (betas$sigmas)^2))
         }
+
+
+        # # ## calculate log-likelihood
+        # sbm <- to_B(sbm)
+        # B <- as.matrix(sbm)
+        # s <- sbm$sigmas
+        #
+        # intervention <- data[, pp + 1]
+        # logl <- 0
+        # for(j in 1:pp) {
+        #     loglj <- sum((data[intervention != j, j] - data[intervention != j, -c(j, pp + 1), drop = FALSE] %*% B[-j, j, drop = FALSE])^2)
+        #     loglj <- loglj / 2 / s[j] + nj[j] * log(s[j]) / 2
+        #     logl <- logl + loglj
+        # }
+        # ccdr.out[[i]]$logl <- logl
 
         # 7-16-14: Added code below to check edge threshold via alpha parameter
         if(ccdr.out[[i]]$nedge > alpha * pp){
@@ -352,7 +369,8 @@ ccdr_singleR <- function(cors, ## now a longer vector
                      nedge = ccdr.out$length,
                      pp = pp,
                      nn = nn, ## do we still need to include nj here?
-                     time = t2.ccdr - t1.ccdr)
+                     time = t2.ccdr - t1.ccdr
+                     )
     ccdr.out$sbm <- reIndexR(ccdr.out$sbm)
 
     # ccdrFit(ccdr.out)

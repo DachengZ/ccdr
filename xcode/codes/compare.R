@@ -14,7 +14,7 @@ compare.graph <- function(g.est, g.true, o = NULL) {
   trueL <- edges(g.true)
   estL <- edges(g.est)
   nn <- length(trueL)
-  
+
   P <- TP <- R <- FP <- 0
   for(j in 1:nn) {
     lj <- length(estL[[j]])
@@ -27,7 +27,7 @@ compare.graph <- function(g.est, g.true, o = NULL) {
       }
     }
   }
-  FP <- FP - R 
+  FP <- FP - R
   ## shd(g, ccdr2graph(ccdr.path[[3]])) ## SHD of the estimated DAG
   Tedge <- sum(sapply(trueL, length))
   ### Fedge <- pp * (pp - 1) / 2 - Tedge

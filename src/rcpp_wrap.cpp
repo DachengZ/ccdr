@@ -59,7 +59,7 @@ List gridCCDr(NumericVector cors,
         //
         // log.h logging
         //
-        FILE* pFile = fopen("/Users/Zigmund/Desktop/ccdr_proj_LOG_FILE.txt", "w");
+        FILE* pFile = fopen("/Users/Dacheng/Desktop/ccdr_proj_LOG_FILE.txt", "w");
         Output2FILE::Stream() = pFile;
         FILELog::ReportingLevel() = logDEBUG1;
 
