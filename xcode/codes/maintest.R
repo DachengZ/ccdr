@@ -38,7 +38,7 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, ori
         # permutations actually affects estimates
 
         ### Run the algorithm
-        ccdr.path <- ccdr.run(data = dat1, intervention = vfix1, lambdas.length = 20, gamma = 1.25, alpha = 10, verbose = FALSE)
+        ccdr.path <- ccdr.run(data = dat1, intervention = vfix1, lambdas.length = 20, alpha = 10, verbose = FALSE)
         print(ccdr.path) # print some messages to check the speed of this algorithm
 
         ### Find the "best" one with the smallest SHD

@@ -48,7 +48,7 @@ colMeans(test$metric)
 apply(test$metric, 2, sd)
 
 ## intervention on all points
-vfix <- rep(sample(pp), 50)
+vfix <- sample(1:(pp+1), 2 * pp, replace = T)
 test1 <- maintest(g, vfix, N = N)
 test1 <- maintest(g, vfix, N = N, originaldata = test$data)
 
