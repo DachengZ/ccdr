@@ -70,7 +70,7 @@ summarynewtest(test1, tedge0)
 ## for(j in revnodes) {
 ##     revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
 ## }
-revnodes <- c(10, 17)
+revnodes <- c(13, 18)
 vfix.rev <- rep(revnodes[sample(length(revnodes))], nn)
 test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
 
