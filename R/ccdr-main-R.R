@@ -74,9 +74,9 @@ NULL
 #' }
 #'
 #' @export
-ccdr.run <- function(data, ## now append a column indicating which node (1, ..., pp) is fixed; pp+1 means no intervention
-                           ## if necessary, sort it
-                           ## maybe add another wrapper
+ccdr.run <- function(data,
+                     intervention = NULL, ## now use a seperate vector indicating which node (1, ..., pp) is fixed; pp+1 means no intervention
+                                             ## sort? maybe add another wrapper
                      betas,
                      lambdas,
                      lambdas.length = NULL,
@@ -87,7 +87,8 @@ ccdr.run <- function(data, ## now append a column indicating which node (1, ...,
                      verbose = FALSE
 ){
     ### This is just a wrapper for the internal implementation given by ccdr_call
-    ccdr_call(data = data, ## now append a column indicating which node (1, ..., pp) is fixed; pp+1 means no intervention
+    ccdr_call(data = data,
+              intervention = intervention,
               betas = betas,
               lambdas = lambdas,
               lambdas.length = lambdas.length,
@@ -105,7 +106,8 @@ ccdr.run <- function(data, ## now append a column indicating which node (1, ...,
 #    passing to ccdr_gridR and ccdr_singleR. Some type-checking as well, although most of
 #    this is handled internally by ccdr_gridR and ccdr_singleR.
 #
-ccdr_call <- function(data, ## now append a column indicating which node is fixed
+ccdr_call <- function(data,
+                      intervention,
                       betas,
                       lambdas,
                       lambdas.length,
@@ -122,12 +124,13 @@ ccdr_call <- function(data, ## now append a column indicating which node is fixe
 
     ### Get the dimensions of the data matrix
     nn <- as.integer(nrow(data))
-    pp <- as.integer(ncol(data)) - 1
+    pp <- as.integer(ncol(data))
 
-    ## count rows where node j is not fixed
-    intervention <- data[, pp + 1]
     ## check intervention
-    if(any(is.integer(intervention)) || any(intervention <= 0) || any(intervention > pp + 1)) paste0("Intervention labels are incorrect!")
+    if(!is.null(intervention)) {
+        if(length(intervention) != nn) stop("Intervention size does not match!")
+        if(any(!is.integer(intervention)) || any(intervention <= 0) || any(intervention > pp + 1)) stop(paste0("Intervention labels are incorrect:", intervention))
+    } else intervention <- rep(pp + 1, nn)
 
     nj <- rep(0, pp)
     for(j in 1:pp) { ## include 0 here or not?
@@ -192,10 +195,7 @@ ccdr_call <- function(data, ## now append a column indicating which node is fixe
     t1.cor <- proc.time()[3]
     #     cors <- cor(data)
     #     cors <- cors[upper.tri(cors, diag = TRUE)]
-    cors <- cor_vector_intervention(data) ## cors <- cor_vector(data)
-    ## here data contains the intervention label column
-    ## consider drop it earlier?
-    ## then pass data and intervention label separately
+    cors <- cor_vector_intervention(data, intervention) ## cors <- cor_vector(data)
     t2.cor <- proc.time()[3]
 
     fit <- ccdr_gridR(cors = cors, ## now a longer vector

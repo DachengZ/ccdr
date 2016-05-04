@@ -15,6 +15,7 @@
 #     check_list_class
 #     col_classes
 #     cor_vector
+#     cor_vector_intervention
 #
 
 # Special function to check if an object is EITHER matrix or Matrix object
@@ -82,7 +83,7 @@ cor_vector <- function(X){
     cors
 } # END .COR_VECTOR
 
-cor_vector_intervention <- function(X) {
+cor_vector_intervention <- function(X, intervention = NULL) {
 ## Similar to cor_vector
 ## Now there are interventions
     check.numeric <- (col_classes(X) != "numeric")
@@ -95,13 +96,15 @@ cor_vector_intervention <- function(X) {
         stop("Input must have at least 2 rows and columns!") # 2-8-15: Why do we check this here?
     }
 
-    pp <- ncol(X) - 1
-    intervention <- X[, pp + 1]
+    pp <- ncol(X)
+    if(!is.null(intervention)) {
+        if(length(intervention) != nrow(X)) stop("Intervention size does not match")
+    } else intervention <- rep(pp + 1, nrow(X))
+
     cors <- vector("list", pp) ## change from pp+1 to pp
 
     for(j in 1:pp) {
-        XOj <- X[intervention != j, 1:pp]
-        corsj <- cor(XOj)
+        corsj <- cor(X[intervention != j, ])
         cors[[j]] <- corsj[upper.tri(corsj, diag = TRUE)]
     }
     cors <- unlist(cors)

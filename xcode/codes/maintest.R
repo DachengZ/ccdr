@@ -2,7 +2,7 @@ source("rmvDAG_fix.R") ## generate random data with points allowed to be fixed (
 source("convert.R")
 source("compare.R") ## compare graphs. different from `compareGraphs`
 
-maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL) {
+maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, originalvfix = NULL) {
     ## g: input DAG
     ## vfix: nodes to be fixed in each run. length(vfix) == nn
     ## nn: samples to draw; only specify nn when vfix is NULL (no intervention)
@@ -16,8 +16,9 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL) {
     if(!is.null(vfix)) {
         nn <- length(vfix) ## todo: check error if both vfix and nn are NULL
     } else {
-        vfix <- rep(pp + 1, nn)
+        if(is.null(nn)) stop("vfix and nn cannot both be NULL!") else vfix <- rep(pp + 1, nn)
     }
+    if(!is.null(originaldata) & is.null(originalvfix)) originalvfix <- rep(pp + 1, nrow(originaldata))
     metric <- matrix(0, N, 6) ## to record performance metrics
     colnames(metric) <- c("P", "TP", "R", "FP", "TPR", "FDR")
     edges <- matrix(0, pp, pp) ## to count how many times each edges is estimated
@@ -27,17 +28,17 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL) {
 
         dat <- rmvDAG.fix(n = nn, dag = g, vfix = vfix)
         dat <- rbind(dat, originaldata) ## todo: check if sizes match
-        vfixi <- dat[, pp + 1]
 
         o <- sample(1:pp)
         o1 <- c(o, pp + 1)
         q <- order(o) # o[q] == q[o] == 1:pp
         q1 <- order(o1)
-        dat1 <- cbind(dat[, o], q1[vfixi]) # permute the columns to randomize node ordering
+        dat1 <- dat[, o] # permute the columns to randomize node ordering
+        vfix1 <- q1[c(vfix, originalvfix)]
         # permutations actually affects estimates
 
         ### Run the algorithm
-        ccdr.path <- ccdr.run(data = dat1, lambdas.length = 20, alpha = 10, verbose = FALSE)
+        ccdr.path <- ccdr.run(data = dat1, intervention = vfix1, lambdas.length = 20, gamma = 1.25, alpha = 10, verbose = FALSE)
         print(ccdr.path) # print some messages to check the speed of this algorithm
 
         ### Find the "best" one with the smallest SHD
@@ -58,7 +59,7 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL) {
         edges <- edges + wgtMatrix(graph.shd, transpose = FALSE)
     }
     ## includes the samples in the last test
-    return(list(edges = edges, metric = metric, samples = nn, tests = N, data = dat))
+    return(list(edges = edges, metric = metric, samples = nn, tests = N, data = dat, vfix = vfix))
 }
 
 summarynewtest <- function(test1, edges) {
@@ -66,32 +67,6 @@ summarynewtest <- function(test1, edges) {
     ## edges: specify edges to be summarized; or based on vfix
     edges1 <- test1$edges
     return(cbind(from = edges[, 1], to = edges[, 2], est = edges1[edges[, 1:2]], rev = t(edges1)[edges[, 1:2]], old = edges[, 3], oldrev = edges[, 4], wgt = mm[edges[, 1:2]]))
-}
-
-summarynewtest.old <- function(test1, edges = NULL, test0 = NULL) {
-    ## test0: original test
-    ## test1: new test (eg. with nodes fixed)
-    ## edges: specify edges to be summarized; or based on vfix
-    edges1 <- test1$edges
-    if(is.null(edges)) {
-        vfix <- test1$vfix
-        edges0 <- test0$edges
-        ## first, see vfix as outgoing nodes, find their child nodes
-        out <- which(edges0[vfix, , drop = FALSE] != 0, arr.ind = T)
-        out[, 1] <- vfix[out[, 1]]
-        out <- matrix(out[out[, 1] < out[, 2], ], ncol = 2)
-        out1 <- cbind(from = out[, 1], to = out[, 2], est = edges1[out], rev = t(edges1)[out])
-
-        ## then, see vfix as incoming nodes
-        inc <- which(edges0[, vfix, drop = FALSE] != 0, arr.ind = T)
-        inc[, 2] <- vfix[inc[, 2]]
-        inc <- matrix(inc[inc[, 1] < inc[, 2], ], ncol = 2)
-        inc1 <- cbind(from = inc[, 1], to = inc[, 2], est = edges1[inc], rev = t(edges1)[inc])
-
-        return(rbind(out1, inc1))
-    } else {
-        return(cbind(from = edges[, 1], to = edges[, 2], est = edges1[edges[, 1:2]], rev = t(edges1)[edges[, 1:2]]))
-    }
 }
 
 redge <- function(test) {

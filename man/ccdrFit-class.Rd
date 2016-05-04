@@ -18,6 +18,7 @@ can be handled separately if desired (be careful!).
 \item{\code{pp}}{(integer) Number of nodes.}
 \item{\code{nn}}{(integer) Number of observations this estimate was based on.}
 \item{\code{time}}{(numeric) Time in seconds to generate this estimate.}
+\item{\code{logl}}{(numeric) Log-likelihood.}
 }
 }
 

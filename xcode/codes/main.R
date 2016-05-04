@@ -1,9 +1,9 @@
 # install.packages("devtools")
 # library(devtools)
 # if(devtools::find_rtools()) devtools::install_github("itsrainingdata/ccdr")
-library(ccdr)
+# library(ccdr) ## manually build this package and load
 
-setwd("~/ccdr/xcode/codes")
+setwd("~/ccdr/xcode/codes") ## change if necessary
 
 # install.packages("bnlearn")
 library(bnlearn)
@@ -26,12 +26,12 @@ source("rmvDAG_fix.R") ## generate random data with points allowed to be fixed (
 source("convert.R")
 source("compare.R") ## compare graphs. different from `compareGraphs`
 source("maintest.R") ## main test
-source("swaptest.R")
+## source("swaptest.R") ## outdated method if in each test we just swap columns on the same sample
 
 ### Set up the model parameters
-nn <- 100                # How many samples to draw?
-pp <- 50              # How many nodes in the DAG?
-num.edges <- 100       # How many *expected* edges in the DAG?
+nn <- 1000                # How many samples to draw?
+pp <- 20              # How many nodes in the DAG?
+num.edges <- 20       # How many *expected* edges in the DAG?
 ss <- num.edges / pp    # This is the expected number of parents *per node*
 
 ### Generate a random DAG using the pcalg method randomDAG
@@ -42,59 +42,43 @@ g <- randomDAG(n = pp, prob = edge.pr, lB = beta.min, uB = beta.max) # Note that
 mm <- wgtMatrix(g, FALSE)
 
 vfix <- c() # nodes to be fixed later
-N <- 50 # number of tests
-test <- swaptest(g, vfix, nn, N)
+N <- 10 # number of tests
+test <- maintest(g, vfix, nn, N)
+colMeans(test$metric)
+apply(test$metric, 2, sd)
 
 ## intervention on all points
-vfix <- rep(sample(pp), 5)
+vfix <- rep(sample(pp), 50)
 test1 <- maintest(g, vfix, N = N)
-
+test1 <- maintest(g, vfix, N = N, originaldata = test$data)
 
 ## focus on reversed edges
-## get edges with fewer true estimates and far more reversed estimates
+## get edges with fewer true estimates and many more reversed estimates
 redge0 <- redge(test)
-redge0 ## why nothing
+redge0
+## and true edges
 tedge0 <- tedge(test)
-tedge0 ## why nothing
-
-# redge1 <- redge(test1)
-# redge1 ## why things
+tedge0
 
 summarynewtest(test1, redge0)
+summarynewtest(test1, tedge0)
 # summarynewtest(test, redge1)
 
 ## fix -outgoing- nodes from reversed edges
-revnodes <- c(redge0[, 1], redge0[, 2]) ## unique?
+## revnodes <- c(redge0[, 1], redge0[, 2]) ## unique?
+## revnodes <- c(15, 19)
+## for(j in revnodes) {
+##     revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
+## }
+revnodes <- c(10, 17)
+vfix.rev <- rep(revnodes[sample(length(revnodes))], nn)
+test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
 
-revnodes <- c(17, 26, 30)
-for(j in revnodes) {
-    revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
-}
-#revnodes <- c(10, 19, 34, 41, 14)
-vfix.rev <- rep(revnodes[sample(length(revnodes))], 2 * nn)
-
-# test.rev <- swaptest(g, vfix.rev, N = N)
-test.rev <- swaptest(g, vfix.rev, N = N, originaldata = test$data)
-
+colMeans(test.rev$metric)
+apply(test.rev$metric, 2, sd)
 ## see if any changes
 summarynewtest(test.rev, redge0)
 summarynewtest(test.rev, tedge0)
 
-
-## usually the edges are still in estimates, and some (most) estimates are still reversed
-## this heavily depends on how we fix the nodes
-## eg. what distribution? (runif)
-## what range? (9 - 11)
-## if the incoming nodes has more than one parents, do we fix other parent nodes?
-
-### or fixing incoming nodes
-### usually the edges no longer appear in any estimates
-### so it is less likely that a causal relationship exists in this direction
-
-## non-existent edge
-## Case I: a->b->c and we find a->c(c->a)
-## Case II: a->b, c->b and we find a->c(c->a)
-nedge0 <- nedge(test)
-vfix.new.i <- unique(nedge0[, 1])
-test.new.i <- maintest(g, vfix.new.i, nn, N)
-summarynewtest(test, test.new.i)
+## no matter how we add intervention, edges are ALWAYS reversed in the estimates
+## is that a bug

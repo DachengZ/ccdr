@@ -766,9 +766,10 @@ double singleUpdate(const unsigned int a,
     //   associated with the penalty function at the residual factor res_ab given the fixed
     //   values of gamma and lambda.
     //
-    PenaltyFunction pen = PenaltyFunction(gammaMCP / nj[b]);
-    betaUpdate = pen.threshold(res_ab, nj[b] * lambda);
-
+    // PenaltyFunction pen = PenaltyFunction(gammaMCP / nj[b]);
+    // betaUpdate = pen.threshold(res_ab, nj[b] * lambda);
+    PenaltyFunction pen = PenaltyFunction(gammaMCP);
+    betaUpdate = pen.threshold(res_ab, lambda);
     #ifdef _DEBUG_ON_
         FILE_LOG(logDEBUG2) << "Function call: singleUpdate(" << a << ", " << b << ") with lambda = " << lambda << "  /  res_ab = " << res_ab;
     #endif
@@ -844,7 +845,7 @@ void computeEdgeLoss(const double betaUpdate,
 
     // Compute the value of the penalty
     penalty = 0;
-    PenaltyFunction pen = PenaltyFunction(gammaMCP / nj[b]);
+    PenaltyFunction pen = PenaltyFunction(gammaMCP);
     for(unsigned int i = 0; i < betas.rowsizes(b); ++i){
         penalty += pen.p(fabs(betas.value(b, i)), lambda);
     }
