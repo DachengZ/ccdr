@@ -66,7 +66,7 @@ summarynewtest <- function(test1, edges) {
     ## test1: new test (eg. with nodes fixed)
     ## edges: specify edges to be summarized; or based on vfix
     edges1 <- test1$edges
-    return(cbind(from = edges[, 1], to = edges[, 2], est = edges1[edges[, 1:2]], rev = t(edges1)[edges[, 1:2]], old = edges[, 3], oldrev = edges[, 4], wgt = mm[edges[, 1:2]]))
+    return(cbind(from = edges[, 1], to = edges[, 2], est = edges1[edges[, 1:2, drop = FALSE]], rev = t(edges1)[edges[, 1:2, drop = FALSE]], old = edges[, 3], oldrev = edges[, 4], wgt = mm[edges[, 1:2, drop = FALSE]]))
 }
 
 redge <- function(test) {

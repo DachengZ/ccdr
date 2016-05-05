@@ -1,4 +1,4 @@
-rmvDAG.fix <- function(n, dag, vfix = NULL, m = 0, s = 5, back.compatible = F) {
+rmvDAG.fix <- function(n, dag, vfix = NULL, m = 0, s = 1, back.compatible = F) {
     ## Based on rmvDAG
     ## Author: Markus Kalisch, Date: 26 Jan 2006;  Martin Maechler
     ## ----------------------------------------------------------------------

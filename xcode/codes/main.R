@@ -29,9 +29,9 @@ source("maintest.R") ## main test
 ## source("swaptest.R") ## outdated method if in each test we just swap columns on the same sample
 
 ### Set up the model parameters
-nn <- 1000                # How many samples to draw?
-pp <- 20              # How many nodes in the DAG?
-num.edges <- 20       # How many *expected* edges in the DAG?
+nn <- 50                # How many samples to draw?
+pp <- 100              # How many nodes in the DAG?
+num.edges <- 50       # How many *expected* edges in the DAG?
 ss <- num.edges / pp    # This is the expected number of parents *per node*
 
 ### Generate a random DAG using the pcalg method randomDAG
@@ -42,14 +42,14 @@ g <- randomDAG(n = pp, prob = edge.pr, lB = beta.min, uB = beta.max) # Note that
 mm <- wgtMatrix(g, FALSE)
 
 vfix <- c() # nodes to be fixed later
-N <- 10 # number of tests
+N <- 50 # number of tests
 test <- maintest(g, vfix, nn, N)
 colMeans(test$metric)
 apply(test$metric, 2, sd)
 
 ## intervention on all points
-vfix <- sample(1:(pp+1), 2 * pp, replace = T)
-test1 <- maintest(g, vfix, N = N)
+vfix <- sample(1:(pp+1), nn, replace = T)
+# test1 <- maintest(g, vfix, N = N)
 test1 <- maintest(g, vfix, N = N, originaldata = test$data)
 
 ## focus on reversed edges
@@ -70,15 +70,13 @@ summarynewtest(test1, tedge0)
 ## for(j in revnodes) {
 ##     revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
 ## }
-revnodes <- c(13, 18)
+revnodes <- c(15, 30, 2, 49)
 vfix.rev <- rep(revnodes[sample(length(revnodes))], nn)
-test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
+test.rev <- maintest(g, vfix.rev, N = N)
+# test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
 
 colMeans(test.rev$metric)
 apply(test.rev$metric, 2, sd)
 ## see if any changes
 summarynewtest(test.rev, redge0)
 summarynewtest(test.rev, tedge0)
-
-## no matter how we add intervention, edges are ALWAYS reversed in the estimates
-## is that a bug

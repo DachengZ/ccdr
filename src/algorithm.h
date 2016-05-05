@@ -424,6 +424,7 @@ void concaveCDInit(const double lambda,
 
             double betaUpdateij = singleUpdate(i, j, lambda, nj, betas, gammaMCP, cors, verbose); // or only use nj[j]?
             double betaUpdateji = singleUpdate(j, i, lambda, nj, betas, gammaMCP, cors, verbose); // or only use nj[i]?
+            // if(verbose) OUTPUT << "updating betas: i=" << i << ", j = " << j << ", beta_ij=" << betaUpdateij << " and beta_ji = " << betaUpdateji << ". ";
             bool hasCycleij = false, hasCycleji = false;
 
             if(fabs(betaUpdateij) > ZERO_THRESH){
@@ -439,8 +440,10 @@ void concaveCDInit(const double lambda,
 
             if(hasCycleij){
                 betaUpdateij = 0.0;
+                // if(verbose) OUTPUT << "we choose ji because ij induces a circle.\n";
             } else if(hasCycleji){
                 betaUpdateji = 0.0;
+                // if(verbose) OUTPUT << "we choose ij because ji induces a circle.\n";
             } else{
                 // single parameter update for beta_ji
                 computeEdgeLoss(betaUpdateji, j, i, lambda, nj, betas, gammaMCP, cors, S, verbose);
@@ -468,12 +471,14 @@ void concaveCDInit(const double lambda,
                 if((S1ji + S1ij) <= (S2ji + S2ij)){
                     // If S1 <= S2, then beta_ij gets updated and beta_ji = 0
                     betaUpdateji = 0.0;
+                    // if(verbose) OUTPUT << "we choose ij because ji has higher score.\n";
 
                     // NOTE: Instead of updating the error here, update it after the SPUs have been computed
                     // and we are ready to update the sparse structure
                 } else{
                     // If S2 < S1, then beta_ji gets updated and beta_ij = 0
                     betaUpdateij = 0.0;
+                    // if(verbose) OUTPUT << "we choose ji because ij has higher score.\n";
 
                     // NOTE: Instead of updating the error here, update it after the SPUs have been computed
                     // and we are ready to update the sparse structure
