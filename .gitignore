@@ -6,3 +6,5 @@ src/*.so
 src/*.dll
 #man/*.Rd
 *.tar.gz
+.DS_Store
+ccdr/ccdr.xcodeproj

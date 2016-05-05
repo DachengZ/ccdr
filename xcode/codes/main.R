@@ -29,9 +29,9 @@ source("maintest.R") ## main test
 ## source("swaptest.R") ## outdated method if in each test we just swap columns on the same sample
 
 ### Set up the model parameters
-nn <- 50                # How many samples to draw?
-pp <- 100              # How many nodes in the DAG?
-num.edges <- 50       # How many *expected* edges in the DAG?
+nn <- 100                # How many samples to draw?
+pp <- 200              # How many nodes in the DAG?
+num.edges <- 100       # How many *expected* edges in the DAG?
 ss <- num.edges / pp    # This is the expected number of parents *per node*
 
 ### Generate a random DAG using the pcalg method randomDAG
@@ -70,10 +70,10 @@ summarynewtest(test1, tedge0)
 ## for(j in revnodes) {
 ##     revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
 ## }
-revnodes <- c(15, 30, 2, 49)
+revnodes <- c(49, 13, 23, 162) # change this to whatever nodes we want to add intervention
 vfix.rev <- rep(revnodes[sample(length(revnodes))], nn)
-test.rev <- maintest(g, vfix.rev, N = N)
-# test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
+# test.rev <- maintest(g, vfix.rev, N = N)
+test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
 
 colMeans(test.rev$metric)
 apply(test.rev$metric, 2, sd)
