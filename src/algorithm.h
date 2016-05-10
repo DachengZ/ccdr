@@ -57,8 +57,8 @@ double ZERO_THRESH = 1e-12;
 std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,    // array containing the correlations between predictors
                                                                             // now longer due to intervention added
                                         SparseBlockMatrix betas,            // initial guess of beta matrix
-                                        const unsigned int nn,              // # of rows in data matrix
                                         const std::vector<int>& nj,         // # of rows where node j is not fixed
+                                        const std::vector<double>& aj,
                                         const std::vector<double>& lambdas, // vector containing the grid of regularization parameters to be tested
                                         const std::vector<double>& params,  // vector containing user-defined parameters: {gamma, eps, maxIters, alpha}
                                         const int verbose                   // binary variable to specify whether or not to print progress reports
@@ -68,8 +68,8 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,    // a
 SparseBlockMatrix singleCCDr(const std::vector<double>& cors,   // array containing the correlations between predictors
                                                                 // now longer due to intervention added
                              SparseBlockMatrix betas,           // initial guess of beta matrix
-                             //const unsigned int nn,             // # of rows in data matrix
                              const std::vector<int>& nj,        // # of rows where node j is not fixed
+                             const std::vector<double>& aj,
                              const double lambda,               // value of regularization parameter
                              const std::vector<double>& params, // vector containing user-defined parameters: {gamma, eps, maxIters, alpha}
                              const int verbose                  // binary variable to specify whether or not to print progress reports
@@ -80,8 +80,8 @@ void computeEdgeLoss(const double betaUpdate,           // proposed new value of
                      const unsigned int a,              // initial node (i.e. update beta_ab)
                      const unsigned int b,              // terminal node (i.e. update beta_ab)
                      const double lambda,               // value of regularization parameter
-                     //const unsigned int nn,             // # of rows in data matrix
                      const std::vector<int>& nj,        // # of rows where node j is not fixed
+                     const std::vector<double>& aj,
                      SparseBlockMatrix& betas,          // current value of beta matrix
                      //const PenaltyFunction& pen,        // penalty function
                      const double gammaMCP,
@@ -92,8 +92,8 @@ void computeEdgeLoss(const double betaUpdate,           // proposed new value of
 
 // prototype for concaveCDInit
 void concaveCDInit(const double lambda,                         // value of regularization parameter
-                   //const unsigned int nn,                       // # of rows in data matrix
                    const std::vector<int>& nj,                  // # of rows where node j is not fixed
+                   const std::vector<double>& aj,
                    SparseBlockMatrix& betas,                    // current value of beta matrix
                    CCDrAlgorithm& alg,                          // CCDrAlgorithm object for this run
                    // const PenaltyFunction& pen,                  // penalty function
@@ -104,8 +104,8 @@ void concaveCDInit(const double lambda,                         // value of regu
 
 // prototype for concaveCD
 void concaveCD(const double lambda,                             // value of regularization parameter
-               //const unsigned int nn,                           // # of rows in data matrix
                const std::vector<int>& nj,                      // # of rows where node j is not fixed
+               const std::vector<double>& aj,
                SparseBlockMatrix& betas,                        // current value of beta matrix
                CCDrAlgorithm& alg,                              // CCDrAlgorithm object for this run
                //const PenaltyFunction& pen,                      // penalty function
@@ -118,8 +118,8 @@ void concaveCD(const double lambda,                             // value of regu
 double singleUpdate(const unsigned int a,                       // initial node (i.e. update beta_ab)
                     const unsigned int b,                       // terminal node (i.e. update beta_ab)
                     const double lambda,                        // value of regularization parameter
-                    //const unsigned int nn,                      // # of rows in data matrix
                     const std::vector<int>& nj,                 // # of rows where node j is not fixed
+                    const std::vector<double>& aj,
                     const SparseBlockMatrix& betas,             // current value of beta matrix
                     //const PenaltyFunction& pen,                 // penalty function
                     const double gammaMCP,
@@ -131,8 +131,8 @@ double singleUpdate(const unsigned int a,                       // initial node 
 double singleUpdateV(const unsigned int a,                       // initial node (i.e. update beta_ab)
                      const unsigned int b,                       // terminal node (i.e. update beta_ab)
                      const double lambda,                        // value of regularization parameter
-                     //const unsigned int nn,                      // # of rows in data matrix
                      const std::vector<int>& nj,                 // # of rows where node j is not fixed
+                     const std::vector<double>& aj,
                      SparseBlockMatrix& betas,                   // current value of beta matrix
                      //const PenaltyFunction& pen,                 // penalty function
                      const double gammaMCP,
@@ -165,8 +165,8 @@ bool checkCycleSparse(const int node,                    // number of nodes in g
 //
 std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
                                         SparseBlockMatrix betas,
-                                        const unsigned int nn,
                                         const std::vector<int>& nj, // added nj
+                                        const std::vector<double>& aj,
                                         const std::vector<double>& lambdas,
                                         const std::vector<double>& params,
                                         const int verbose
@@ -197,7 +197,7 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
 
         // To save memory, simply overwrite the same object (betas)
         // After each call to singleCCDr, we push_back the estimated object to grid_betas so there is no loss of data
-        betas = singleCCDr(cors, betas, nj, lambda, params, verbose); // added nj
+        betas = singleCCDr(cors, betas, nj, aj, lambda, params, verbose); // added nj
         grid_betas.push_back(betas);
 
         //--- VERBOSE ONLY ---//
@@ -243,8 +243,8 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
 //
 SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
                              SparseBlockMatrix betas,
-                             //const unsigned int nn,
                              const std::vector<int>& nj, // added nj
+                             const std::vector<double>& aj,
                              const double lambda,
                              const std::vector<double>& params,
                              const int verbose
@@ -289,7 +289,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
         CCDR.resetFlags();
 
         // This pass runs over all blocks
-        concaveCDInit(lambda, nj, betas, CCDR, gammaMCP, cors, verbose);
+        concaveCDInit(lambda, nj, aj, betas, CCDR, gammaMCP, cors, verbose);
 
         //
         // ADD EXTRA ALGORITHM CHECKS HERE IF NEEDED
@@ -301,7 +301,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
             // block for running the rest of the CD iterations over the given active set
             int iters = 1; // we already ran one pass to determine the active set
             while( CCDR.moar(iters)){
-                concaveCD(lambda, nj, betas, CCDR, gammaMCP, cors, verbose);
+                concaveCD(lambda, nj, aj, betas, CCDR, gammaMCP, cors, verbose);
                 iters++;
             }
         }
@@ -351,8 +351,8 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
 //     -we also update sigmas before betas: what is the effect of swapping these?
 //
 void concaveCDInit(const double lambda,
-                   //const unsigned int nn,
                    const std::vector<int>& nj, // added nj
+                   const std::vector<double>& aj,
                    SparseBlockMatrix& betas,
                    CCDrAlgorithm& alg,
                    //const PenaltyFunction& pen,
@@ -422,8 +422,8 @@ void concaveCDInit(const double lambda,
     for(unsigned int i = 0; i < pp; ++i){
     	for(unsigned int j = i + 1; j < pp; ++j){
 
-            double betaUpdateij = singleUpdate(i, j, lambda, nj, betas, gammaMCP, cors, verbose); // or only use nj[j]?
-            double betaUpdateji = singleUpdate(j, i, lambda, nj, betas, gammaMCP, cors, verbose); // or only use nj[i]?
+            double betaUpdateij = singleUpdate(i, j, lambda, nj, aj, betas, gammaMCP, cors, verbose); // or only use nj[j]?
+            double betaUpdateji = singleUpdate(j, i, lambda, nj, aj, betas, gammaMCP, cors, verbose); // or only use nj[i]?
             // if(verbose) OUTPUT << "updating betas: i=" << i << ", j = " << j << ", beta_ij=" << betaUpdateij << " and beta_ji = " << betaUpdateji << ". ";
             bool hasCycleij = false, hasCycleji = false;
 
@@ -446,7 +446,7 @@ void concaveCDInit(const double lambda,
                 // if(verbose) OUTPUT << "we choose ij because ji induces a circle.\n";
             } else{
                 // single parameter update for beta_ji
-                computeEdgeLoss(betaUpdateji, j, i, lambda, nj, betas, gammaMCP, cors, S, verbose);
+                computeEdgeLoss(betaUpdateji, j, i, lambda, nj, aj, betas, gammaMCP, cors, S, verbose);
                 double S1ji = S[0]; // Qi|betaji=0
                 double S2ji = S[1]; // Qi|betaji=betaUpdate
 
@@ -455,7 +455,7 @@ void concaveCDInit(const double lambda,
             #endif
 
                 // single parameter update for beta_ij
-                computeEdgeLoss(betaUpdateij, i, j, lambda, nj, betas, gammaMCP, cors, S, verbose);
+                computeEdgeLoss(betaUpdateij, i, j, lambda, nj, aj, betas, gammaMCP, cors, S, verbose);
                 double S1ij = S[1]; // Qj|betaij=betaUpdate
                 double S2ij = S[0]; // Qj|betaij=0
 
@@ -605,8 +605,8 @@ void concaveCDInit(const double lambda,
 //     -since we are not adding any new edges, the order of sigmas/betas should not matter here
 //
 void concaveCD(const double lambda,
-               //const unsigned int nn,
                const std::vector<int>& nj,
+               const std::vector<double>& aj,
                SparseBlockMatrix& betas,
                CCDrAlgorithm& alg,
                //const PenaltyFunction& pen,
@@ -682,9 +682,9 @@ void concaveCD(const double lambda,
 
             // only update the nonzero edge
             if(fabs(betakj) > ZERO_THRESH){
-                betaUpdateij = singleUpdate(i, j, lambda, nj, betas, gammaMCP, cors, verbose);
+                betaUpdateij = singleUpdate(i, j, lambda, nj, aj, betas, gammaMCP, cors, verbose);
             } else if(fabs(betajk) > ZERO_THRESH){
-                betaUpdateji = singleUpdate(j, i, lambda, nj, betas, gammaMCP, cors, verbose);
+                betaUpdateji = singleUpdate(j, i, lambda, nj, aj, betas, gammaMCP, cors, verbose);
             }
 
             //
@@ -722,8 +722,8 @@ void concaveCD(const double lambda,
 double singleUpdate(const unsigned int a,
                     const unsigned int b,
                     const double lambda,
-                    //const unsigned int nn,
                     const std::vector<int>& nj,
+                    const std::vector<double>& aj,
                     const SparseBlockMatrix& betas,
                     //const PenaltyFunction& pen,
                     const double gammaMCP,
@@ -773,8 +773,8 @@ double singleUpdate(const unsigned int a,
     //
     // PenaltyFunction pen = PenaltyFunction(gammaMCP / nj[b]);
     // betaUpdate = pen.threshold(res_ab, nj[b] * lambda);
-    PenaltyFunction pen = PenaltyFunction(gammaMCP);
-    betaUpdate = pen.threshold(res_ab, lambda);
+    PenaltyFunction pen = PenaltyFunction(gammaMCP / aj[b]);
+    betaUpdate = pen.threshold(res_ab, aj[b] * lambda);
     #ifdef _DEBUG_ON_
         FILE_LOG(logDEBUG2) << "Function call: singleUpdate(" << a << ", " << b << ") with lambda = " << lambda << "  /  res_ab = " << res_ab;
     #endif
@@ -789,8 +789,8 @@ void computeEdgeLoss(const double betaUpdate,
                      const unsigned int a,
                      const unsigned int b,
                      const double lambda,
-                     //const unsigned int nn,
                      const std::vector<int>& nj,
+                     const std::vector<double>& aj,
                      SparseBlockMatrix& betas,
                      //const PenaltyFunction& pen,
                      const double gammaMCP,
@@ -850,9 +850,9 @@ void computeEdgeLoss(const double betaUpdate,
 
     // Compute the value of the penalty
     penalty = 0;
-    PenaltyFunction pen = PenaltyFunction(gammaMCP);
+    PenaltyFunction pen = PenaltyFunction(gammaMCP / aj[b]);
     for(unsigned int i = 0; i < betas.rowsizes(b); ++i){
-        penalty += pen.p(fabs(betas.value(b, i)), lambda);
+        penalty += pen.p(fabs(betas.value(b, i)), aj[b] * lambda);
     }
     //penalty -= pen.p(fabs(betas[(pp * b) + b]), lambda); // ignore contribution from beta_bb (should be zero anyway!!!)
 
@@ -894,7 +894,7 @@ void computeEdgeLoss(const double betaUpdate,
 
         // Of course the penalty decomposes like the loss as well, so we can just add
         //   the contribution of pen(beta_ab)
-        S[1] += pen.p(fabs(betaUpdate), lambda) - pen.p(0.0, lambda); // subtract off the value at zero in case p(0) != 0
+        S[1] += pen.p(fabs(betaUpdate), aj[b] * lambda) - pen.p(0.0, aj[b] * lambda); // subtract off the value at zero in case p(0) != 0
     }
 
     // If we modified betas, return it to it's original value

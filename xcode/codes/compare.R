@@ -10,34 +10,35 @@ source("convert.R")
 # }
 
 compare.graph <- function(g.est, g.true, o = NULL) {
-  if(!is.null(o)) g.true <- permutenodes(g.true, o)
-  trueL <- edges(g.true)
-  estL <- edges(g.est)
-  nn <- length(trueL)
+    if(!is.null(o)) g.true <- permutenodes(g.true, o)
+    trueL <- sapply(edgeL(g.true), getElement, "edges")
+    estL <- sapply(edgeL(g.est), getElement, "edges")
+    nn <- length(trueL)
+    ## do not use edgeL. it refers to node names
 
-  P <- TP <- R <- FP <- 0
-  for(j in 1:nn) {
-    lj <- length(estL[[j]])
-    P <- P + lj ## P: number of estimated (predicted) edges
-    if(lj != 0) {
-      for(i in estL[[j]]) {
-        if(i %in% trueL[[j]]) TP <- TP + 1 ## TP: number of true positives
-        else FP <- FP + 1 ## FP: number of false positives
-        if(j %in% trueL[[i]]) R <- R + 1 ## R: number of reversed edges
-      }
+    P <- TP <- R <- FP <- 0
+    for(j in 1:nn) {
+        lj <- length(estL[[j]])
+        P <- P + lj ## P: number of estimated (predicted) edges
+        if(lj != 0) {
+            for(i in estL[[j]]) {
+                if(i %in% trueL[[j]]) TP <- TP + 1 ## TP: number of true positives
+                else FP <- FP + 1 ## FP: number of false positives
+                if(j %in% trueL[[i]]) R <- R + 1 ## R: number of reversed edges
+            }
+        }
     }
-  }
-  FP <- FP - R
-  ## shd(g, ccdr2graph(ccdr.path[[3]])) ## SHD of the estimated DAG
-  Tedge <- sum(sapply(trueL, length))
-  ### Fedge <- pp * (pp - 1) / 2 - Tedge
-  ### fpr = (R + FP) / Fedge
-  return(c(p = P, tp = TP, r = R, fp = FP, tpr = TP / Tedge, fdr = (R + FP) / P))
+    FP <- FP - R
+    ## shd(g, ccdr2graph(ccdr.path[[3]])) ## SHD of the estimated DAG
+    Tedge <- sum(sapply(trueL, length))
+    ### Fedge <- pp * (pp - 1) / 2 - Tedge
+    ### fpr = (R + FP) / Fedge
+    return(c(p = P, tp = TP, r = R, fp = FP, tpr = TP / Tedge, fdr = (R + FP) / P))
 }
 
 compare.cFg <- function(cF, g, o = NULL) {
-  gcF <- ccdrFit2graph(cF)
-  return(compare.graph(cF, g, o))
+    gcF <- ccdrFit2graph(cF)
+    return(compare.graph(cF, g, o))
 }
 
 ### do we need to order back?

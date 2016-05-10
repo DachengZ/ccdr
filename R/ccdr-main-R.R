@@ -319,6 +319,7 @@ ccdr_singleR <- function(cors, ## now a longer vector
     if(any(!is.integer(nj)) || any(nj < 0)) stop("nj must be non-negative integers!")
     if(length(nj) != pp) stop(paste0("nj size does not match:", paste(nj, collapse = ", "), ". Check it out."))
     ## check sum(nj) - (num of non-intervention) == (pp-1) * nn
+    aj <- nj / nn
 
     ### Check betas
     if(check_if_matrix(betas)){ # if the input is a matrix, convert to SBM object
@@ -353,8 +354,8 @@ ccdr_singleR <- function(cors, ## now a longer vector
     t1.ccdr <- proc.time()[3]
     ccdr.out <- singleCCDr(cors,
                            betas,
-                           ## nn, ## to be replaced by nj
                            nj, ## now added nj
+                           aj,
                            lambda,
                            c(gamma, eps, maxIters, alpha),
                            verbose = verbose)
