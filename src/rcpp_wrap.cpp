@@ -47,8 +47,8 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List gridCCDr(NumericVector cors,
               List init_betas,
-              unsigned int nn,
-              IntegerVector nj, // added nj
+              IntegerVector nj,
+              NumericVector aj,
               NumericVector lambdas,
               NumericVector params,
               int verbose
@@ -69,8 +69,8 @@ List gridCCDr(NumericVector cors,
     std::vector<SparseBlockMatrix> grid_betas;
     grid_betas = gridCCDr(as< std::vector<double> >(cors),
                           betas,
-                          nn,
-                          as< std::vector<int> >(nj), // added nj
+                          as< std::vector<int> >(nj),
+                          as< std::vector<double> >(aj),
                           as< std::vector<double> >(lambdas),
                           as< std::vector<double> >(params),
                           verbose);
@@ -87,6 +87,7 @@ List gridCCDr(NumericVector cors,
 List singleCCDr(NumericVector cors,
                 List init_betas,
                 IntegerVector nj, // added nj
+                NumericVector aj,
                 double lambda,
                 NumericVector params,
                 int verbose
@@ -96,8 +97,8 @@ List singleCCDr(NumericVector cors,
 
     betas = singleCCDr(as< std::vector<double> >(cors),
                        betas,
-                       //nn,
-                       as< std::vector<int> >(nj), // added nj
+                       as< std::vector<int> >(nj),
+                       as< std::vector<double> >(aj),
                        lambda,
                        as< std::vector<double> >(params),
                        verbose);

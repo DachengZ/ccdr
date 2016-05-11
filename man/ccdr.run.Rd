@@ -4,11 +4,13 @@
 \alias{ccdr.run}
 \title{Main CCDr Algorithm}
 \usage{
-ccdr.run(data, betas, lambdas, lambdas.length = NULL, gamma = 2,
+ccdr.run(data, intervention, betas, lambdas, lambdas.length = NULL, gamma = 2,
   error.tol = 1e-04, max.iters = NULL, alpha = 10, verbose = FALSE)
 }
 \arguments{
 \item{data}{Data matrix. Must be numeric and contain no missing values.}
+
+\item{intervention}{Intervention labels. Can be NULL if there is no intervention in any row of data; otherwise it must a integer vector of the length same as the number of rows of \code{data}, each element refers to the node under each intervention.}
 
 \item{betas}{Initial guess for the algorithm. Represents the weighted adjacency matrix
 of a DAG where the algorithm will begin searching for an optimal structure.}

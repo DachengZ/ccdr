@@ -29,11 +29,11 @@ compare.graph <- function(g.est, g.true, o = NULL) {
         }
     }
     FP <- FP - R
-    ## shd(g, ccdr2graph(ccdr.path[[3]])) ## SHD of the estimated DAG
     Tedge <- sum(sapply(trueL, length))
     ### Fedge <- pp * (pp - 1) / 2 - Tedge
     ### fpr = (R + FP) / Fedge
-    return(c(p = P, tp = TP, r = R, fp = FP, tpr = TP / Tedge, fdr = (R + FP) / P))
+    ## SHD <- Tedge - TP + FP
+    return(c(p = P, tp = TP, r = R, fp = FP, tpr = TP / Tedge, fdr = (R + FP) / P, shd = Tedge - TP + FP))
 }
 
 compare.cFg <- function(cF, g, o = NULL) {

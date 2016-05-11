@@ -12,15 +12,15 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, ori
     ## todo: distinguish nn and N from input?
     ## todo: make originaldata a list of data?
 
-    pp <- length(g@nodes)
+    pp <- numNodes(g)
     if(!is.null(vfix)) {
         nn <- length(vfix) ## todo: check error if both vfix and nn are NULL
     } else {
         if(is.null(nn)) stop("vfix and nn cannot both be NULL!") else vfix <- rep(pp + 1, nn)
     }
     if(!is.null(originaldata) & is.null(originalvfix)) originalvfix <- rep(pp + 1, nrow(originaldata))
-    metric <- matrix(0, N, 6) ## to record performance metrics
-    colnames(metric) <- c("P", "TP", "R", "FP", "TPR", "FDR")
+    metric <- matrix(0, N, 7) ## to record performance metrics
+    colnames(metric) <- c("P", "TP", "R", "FP", "TPR", "FDR", "SHD")
     edges <- matrix(0, pp, pp) ## to count how many times each edges is estimated
 
     for(testi in 1:N) {
@@ -44,18 +44,19 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, ori
         ### Find the "best" one with the smallest SHD
         g1 <- permutenodes(g, o)
         graph.path <- lapply(ccdr.path, ccdrFit2graph)
-        shd.val <- sapply(graph.path, pcalg::shd, g1)
+        compare.path <- sapply(graph.path, compare.graph, g1)
+        shd.val <- compare.path[7, ]
         lcp <- length(ccdr.path)
         de <- rep(0, lcp)
         for(i in 1:lcp) de[i] <- ccdr.path[[i]]$nedge
         dr <- diff(shd.val) / diff(de)
-        z <- min(which(dr > 0.5, arr.ind = TRUE))
+        z <- min(which(dr >= 0.4, arr.ind = TRUE))
         print(paste0(shd.val))
-        print(z)
+        # print(z)
         # z <- which(shd.val == min(shd.val))
         # z <- z[length(z)]
         graph.shd <- permutenodes(graph.path[[z]], q)
-        metric[testi, ] <- compare.graph(graph.shd, g)
+        metric[testi, ] <- compare.path[, z]
         edges <- edges + wgtMatrix(graph.shd, transpose = FALSE)
     }
     ## includes the samples in the last test
@@ -66,7 +67,7 @@ summarynewtest <- function(test1, edges) {
     ## test1: new test (eg. with nodes fixed)
     ## edges: specify edges to be summarized; or based on vfix
     edges1 <- test1$edges
-    return(cbind(from = edges[, 1], to = edges[, 2], est = edges1[edges[, 1:2, drop = FALSE]], rev = t(edges1)[edges[, 1:2, drop = FALSE]], old = edges[, 3], oldrev = edges[, 4], wgt = mm[edges[, 1:2, drop = FALSE]]))
+    return(cbind(from = edges[, 1], to = edges[, 2], est = edges1[edges[, 1:2, drop = FALSE]], rev = t(edges1)[edges[, 1:2, drop = FALSE]], old = edges[, 3], oldrev = edges[, 4]))
 }
 
 redge <- function(test) {

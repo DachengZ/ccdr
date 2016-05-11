@@ -27,8 +27,11 @@ ccdrFit2matrix <- function(cF) {
 
 ## adjacency matrix to graph
 ## m_{ij} = 1 <--> edge i->j exists
-adj2graph <- function(m) {
-    return(as(graphAM(adj = t(m), edgemode = 'directed'), "graphNEL"))
+## no longer need to transpose here
+adj2graph <- function(m, newname = NULL) {
+    g <- as(graphAM(adj = m, edgemode = 'directed'), "graphNEL")
+    if(!is.null(newname)) nodes(g) <- newname
+    return(g)
 }
 
 ## permute nodes (and edges) of a graph
