@@ -1,11 +1,11 @@
-Package: ccdr
+Package: ccdri
 Type: Package
 Title: CCDr Algorithm for Learning Sparse Gaussian Bayesian Networks.
 Version: 0.0.1
 Date: 2016-04-05
 Authors@R: person("Bryon", "Aragam", email = "bryon@stat.ucla.edu", role = c("aut", "cre"))
 Maintainer: Bryon Aragam <bryon@stat.ucla.edu>
-Description: Structure learning for Bayesian networks using the CCDr algorithm.
+Description: Structure learning for Bayesian networks using the CCDr algorithm. Now added intervention feature.
 License: GPL (>= 2)
 LazyData: TRUE
 Imports:

@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // gridCCDr
 List gridCCDr(NumericVector cors, List init_betas, IntegerVector nj, NumericVector aj, NumericVector lambdas, NumericVector params, int verbose);
-RcppExport SEXP ccdr_gridCCDr(SEXP corsSEXP, SEXP init_betasSEXP, SEXP njSEXP, SEXP ajSEXP, SEXP lambdasSEXP, SEXP paramsSEXP, SEXP verboseSEXP) {
+RcppExport SEXP ccdri_gridCCDr(SEXP corsSEXP, SEXP init_betasSEXP, SEXP njSEXP, SEXP ajSEXP, SEXP lambdasSEXP, SEXP paramsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -24,7 +24,7 @@ END_RCPP
 }
 // singleCCDr
 List singleCCDr(NumericVector cors, List init_betas, IntegerVector nj, NumericVector aj, double lambda, NumericVector params, int verbose);
-RcppExport SEXP ccdr_singleCCDr(SEXP corsSEXP, SEXP init_betasSEXP, SEXP njSEXP, SEXP ajSEXP, SEXP lambdaSEXP, SEXP paramsSEXP, SEXP verboseSEXP) {
+RcppExport SEXP ccdri_singleCCDr(SEXP corsSEXP, SEXP init_betasSEXP, SEXP njSEXP, SEXP ajSEXP, SEXP lambdaSEXP, SEXP paramsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;

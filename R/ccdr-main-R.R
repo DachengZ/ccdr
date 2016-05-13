@@ -1,6 +1,6 @@
 #
 #  ccdr-main-R.R
-#  ccdr
+#  ccdri
 #
 #  Created by Bryon Aragam (local) on 2/4/15.
 #  Copyright (c) 2014-2015 Bryon Aragam (local). All rights reserved.
@@ -11,9 +11,9 @@
 #
 #   CONTENTS:
 #     ccdr.run
-#     ccdr_call
-#     ccdr_gridR
-#     ccdr_singleR
+#     ccdri_call
+#     ccdri_gridR
+#     ccdri_singleR
 #
 
 ###--- These two lines are necessary to import the auto-generated Rcpp methods in RcppExports.R---###
@@ -86,8 +86,8 @@ ccdr.run <- function(data,
                      alpha = 10,
                      verbose = FALSE
 ){
-    ### This is just a wrapper for the internal implementation given by ccdr_call
-    ccdr_call(data = data,
+    ### This is just a wrapper for the internal implementation given by ccdri_call
+    ccdri_call(data = data,
               intervention = intervention,
               betas = betas,
               lambdas = lambdas,
@@ -100,13 +100,13 @@ ccdr.run <- function(data,
               verbose = verbose)
 } # END CCDR.RUN
 
-# ccdr_call
+# ccdri_call
 #
 #   Handles most of the bookkeeping for CCDr. Sets default values and prepares arguments for
-#    passing to ccdr_gridR and ccdr_singleR. Some type-checking as well, although most of
-#    this is handled internally by ccdr_gridR and ccdr_singleR.
+#    passing to ccdri_gridR and ccdri_singleR. Some type-checking as well, although most of
+#    this is handled internally by ccdri_gridR and ccdri_singleR.
 #
-ccdr_call <- function(data,
+ccdri_call <- function(data,
                       intervention,
                       betas,
                       lambdas,
@@ -148,7 +148,7 @@ ccdr_call <- function(data,
         }
 
         if(missing(rlam)){
-            ### Even though ccdr_call should never be called on its own, this behaviour is left for testing backwards-compatibility
+            ### Even though ccdri_call should never be called on its own, this behaviour is left for testing backwards-compatibility
             stop("rlam must be specified if lambdas is not explicitly specified.")
         } else if(is.null(rlam)){
             ### rlam = NULL is used as a sentinel value to indicate a default value should be used
@@ -184,7 +184,7 @@ ccdr_call <- function(data,
         # If the initial matrix is the zero matrix, indexing does not matter so we don't need to use reIndexC here
         #   Still need to set start = 0, though.
         betas$start <- 0
-    } # Type-checking for betas happens in ccdr_singleR
+    } # Type-checking for betas happens in ccdri_singleR
 
     # This parameter can be set by the user, but in order to prevent the algorithm from taking too long to run
     #  it is a good idea to keep the threshold used by default which is O(sqrt(pp))
@@ -198,7 +198,7 @@ ccdr_call <- function(data,
     cors <- cor_vector_intervention(data, intervention) ## cors <- cor_vector(data)
     t2.cor <- proc.time()[3]
 
-    fit <- ccdr_gridR(cors = cors, ## now a longer vector
+    fit <- ccdri_gridR(cors = cors, ## now a longer vector
                       # data = data,
                       as.integer(pp),
                       as.integer(nn), ## can we replace nn with nj now?
@@ -213,12 +213,12 @@ ccdr_call <- function(data,
 
     fit <- lapply(fit, ccdrFit.list)    # convert everything to ccdrFit objects
     ccdrPath.list(fit)                  # wrap as ccdrPath object
-} # END CCDR_CALL
+} # END ccdri_CALL
 
-# ccdr_gridR
+# ccdri_gridR
 #
 #   Main subroutine for running the CCDr algorithm on a grid of lambda values.
-ccdr_gridR <- function(cors, ## now a longer vector
+ccdri_gridR <- function(cors, ## now a longer vector
                        # data,
                        pp, nn, ##
                        nj, ## added nj
@@ -243,7 +243,7 @@ ccdr_gridR <- function(cors, ## now a longer vector
         if(verbose) message("Working on lambda = ", round(lambdas[i], 5), " [", i, "/", nlam, "]")
 
         t1.ccdr <- proc.time()[3]
-        ccdr.out[[i]] <- ccdr_singleR(cors = cors, ## now a longer vector
+        ccdr.out[[i]] <- ccdri_singleR(cors = cors, ## now a longer vector
                                       pp, nn, ##
                                       nj, ## now added nj
                                       betas,
@@ -288,13 +288,13 @@ ccdr_gridR <- function(cors, ## now a longer vector
     }
 
     ccdr.out[1:(i-1)] # only return up to i - 1 since the last (ith) model would not have finished running anyway
-} # END CCDR_GRIDR
+} # END ccdri_GRIDR
 
-# ccdr_singleR
+# ccdri_singleR
 #
 #   Internal subroutine for handling calls to singleCCDr: This is the only place where C++ is directly
 #    called. Type-checking is strongly enforced here.
-ccdr_singleR <- function(cors, ## now a longer vector
+ccdri_singleR <- function(cors, ## now a longer vector
                          pp, nn, ## remove nn?
                          nj, ## added nj
                          betas,
@@ -302,7 +302,7 @@ ccdr_singleR <- function(cors, ## now a longer vector
                          gamma,
                          eps,
                          maxIters,
-                         alpha,     # 2-9-15: No longer necessary in ccdr_singleR, but needed since the C++ call asks for it
+                         alpha,     # 2-9-15: No longer necessary in ccdri_singleR, but needed since the C++ call asks for it
                          verbose = FALSE
 ){
 
@@ -348,7 +348,7 @@ ccdr_singleR <- function(cors, ## now a longer vector
     if(!is.integer(maxIters)) stop("maxIters must be an integer!")
     if(maxIters <= 0) stop("maxIters must be > 0!")
 
-    ### alpha check is in ccdr_gridR
+    ### alpha check is in ccdri_gridR
 
     # if(verbose) cat("Opening C++ connection...")
     t1.ccdr <- proc.time()[3]
@@ -376,4 +376,4 @@ ccdr_singleR <- function(cors, ## now a longer vector
 
     # ccdrFit(ccdr.out)
     ccdr.out
-} # END CCDR_SINGLER
+} # END ccdri_SINGLER

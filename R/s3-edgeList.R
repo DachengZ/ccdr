@@ -1,6 +1,6 @@
 #
 #  s3-edgeList.R
-#  ccdr
+#  ccdri
 #
 #  Created by Bryon Aragam (local) on 7/27/15.
 #  Copyright (c) 2014-2015 Bryon Aragam (local). All rights reserved.

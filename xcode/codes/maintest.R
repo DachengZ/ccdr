@@ -2,7 +2,7 @@ source("rmvDAG_fix.R") ## generate random data with points allowed to be fixed (
 source("convert.R")
 source("compare.R") ## compare graphs. different from `compareGraphs`
 
-maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, originalvfix = NULL) {
+maintest <- function(g, vfix = NULL, nn = NULL, N = 50, gamma = 2, originaldata = NULL, originalvfix = NULL) {
     ## g: input DAG
     ## vfix: nodes to be fixed in each run. length(vfix) == nn
     ## nn: samples to draw; only specify nn when vfix is NULL (no intervention)
@@ -22,6 +22,7 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, ori
     metric <- matrix(0, N, 7) ## to record performance metrics
     colnames(metric) <- c("P", "TP", "R", "FP", "TPR", "FDR", "SHD")
     edges <- matrix(0, pp, pp) ## to count how many times each edges is estimated
+    time <- rep(0, N)
 
     for(testi in 1:N) {
         ### Generate random data according to this DAG using the method rmvDAG
@@ -38,29 +39,33 @@ maintest <- function(g, vfix = NULL, nn = NULL, N = 50, originaldata = NULL, ori
         # permutations actually affects estimates
 
         ### Run the algorithm
-        ccdr.path <- ccdr.run(data = dat1, intervention = vfix1, lambdas.length = 20, alpha = 10, verbose = FALSE)
+        ccdr.path <- ccdr.run(data = dat1, intervention = vfix1, gamma = gamma, lambdas.length = 20, alpha = 10, verbose = FALSE)
         print(ccdr.path) # print some messages to check the speed of this algorithm
+        time[testi] <- sum(sapply(ccdr.path, getElement, "time"))
 
         ### Find the "best" one with the smallest SHD
+        ### Or until SHD grows too fast
         g1 <- permutenodes(g, o)
         graph.path <- lapply(ccdr.path, ccdrFit2graph)
         compare.path <- sapply(graph.path, compare.graph, g1)
         shd.val <- compare.path[7, ]
+        z <- which(shd.val == min(shd.val))
+        z <- z[length(z)]
         lcp <- length(ccdr.path)
-        de <- rep(0, lcp)
-        for(i in 1:lcp) de[i] <- ccdr.path[[i]]$nedge
-        dr <- diff(shd.val) / diff(de)
-        z <- min(which(dr >= 0.4, arr.ind = TRUE))
+        if(z < lcp) {
+            de <- rep(0, lcp - z + 1)
+            for(i in 0:(lcp - z)) de[i + 1] <- ccdr.path[[z + i]]$nedge
+            dr <- diff(shd.val[z:lcp]) / diff(de)
+            z <- z + min(which(dr > 0.3, arr.ind = TRUE)) - 1
+        }
         print(paste0(shd.val))
-        # print(z)
-        # z <- which(shd.val == min(shd.val))
-        # z <- z[length(z)]
+        print(z)
         graph.shd <- permutenodes(graph.path[[z]], q)
         metric[testi, ] <- compare.path[, z]
         edges <- edges + wgtMatrix(graph.shd, transpose = FALSE)
     }
     ## includes the samples in the last test
-    return(list(edges = edges, metric = metric, samples = nn, tests = N, data = dat, vfix = vfix))
+    return(list(edges = edges, metric = metric, time = sum(time), samples = nn, tests = N, data = dat, vfix = vfix))
 }
 
 summarynewtest <- function(test1, edges) {

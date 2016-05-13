@@ -22,7 +22,7 @@ ccdrFit2graph <- function(cF) {
 ## or t(get.adjacency.matrix()) for a sparse matrix
 ## or wgtMatrix(, FALSE)
 ccdrFit2matrix <- function(cF) {
-    return(t(as(ccdrFit2graph(cF), "matrix") != 0))
+    return(as(ccdrFit2graph(cF), "matrix") != 0)
 }
 
 ## adjacency matrix to graph
@@ -55,4 +55,13 @@ permutenodes <- function(g, o) {
         edges1[[q[i]]]$edges <- q[edges0[[i]]$edges]
     }
     return(graphNEL(nodes = nodes1, edgeL = edges1, edgemode = 'directed'))
+}
+
+changeweight <- function(g, lB, uB) {
+    ## change edge weight to runif(lB, uB)
+    edgename <- names(g@edgeData@data)
+    l <- length(edgename)
+    newweight <- runif(length(edgename), 0, 1) * (uB - lB) + lB
+    for(i in 1:l) g@edgeData@data[[i]][[1]] <- newweight[i]
+    return(g)
 }

@@ -1,8 +1,8 @@
-#' ccdr: Structure learning for Bayesian networks using the CCDr algorithm.
+#' ccdri: Structure learning for Bayesian networks using the CCDr algorithm.
 #'
-#' \code{ccdr} implements the CCDr structure learning algorithm for Bayesian networks.
+#' \code{ccdri} implements the CCDr structure learning algorithm for Bayesian networks.
 #'
-#' Based on observational data, this algorithm estimates the structure of a Bayesian network
+#' Based on both observational and interventional data, this algorithm estimates the structure of a Bayesian network
 #' (aka edges in a DAG) using penalized maximum likelihood based on L1 or concave (MCP) regularization.
 #' The main methods are:
 #' \describe{
@@ -11,5 +11,5 @@
 #' }
 #'
 #' @docType package
-#' @name ccdr
+#' @name ccdri
 NULL
