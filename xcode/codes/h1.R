@@ -34,6 +34,7 @@ source("swaptest.R") ## outdated method if in each test we just swap columns on 
 # win95pts intervention has little effect
 dataname <- "win95pts"
 dataurl <- paste0("http://www.bnlearn.com/bnrepository/", dataname, "/", dataname, ".rda")
+# dataurl <- "http://www.bnlearn.com/bnrepository/munin4/munin1.rda"
 con <- url(dataurl)
 load(con)
 close(con)
@@ -47,14 +48,14 @@ nodename <- nodes(g)
 nodes(g) <- as.character(1:pp)
 ### if not topologically sorted
 ### assume node are named by numbers 1:pp
-### g1 <- permutenodes(g, as.integer(tsort(g)))
+### library(RBGL); g0 <- g; g <- permutenodes(g, as.integer(tsort(g)))
 
 # change weight?
 # default is 1. change to 0.5~1?
 g <- changeweight(g, 0.5, 1)
 vfix <- rep(sample(1:pp), 5)
 # vfix <- sample(1:pp, 5, replace = T)
-test <- maintest(g, vfix = vfix, N = 50)
+test <- maintest(g, vfix = vfix, N = 5, lambdas.length = 50)
 
 ## focus on reversed edges
 ## get edges with fewer true estimates and many more reversed estimates
@@ -65,16 +66,20 @@ tedge0 <- tedge(test)
 tedge0
 
 revnodes <- NULL
-revnodes <- c(2, 3, 12, 5, 44, 48, 31, 46, 47, 49, 42, 54, 8, 56, 58, 39, 72) # change this to whatever nodes we want to add intervention
+revnodes <- c(redge0[, 2]) ## unique? # change this to whatever nodes we want to add intervention
+for(j in revnodes) {
+    revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
+}
+revnodes <- unique(revnodes)
 ## if intervention only on the both ends of an edge has little effect,
 ## probably because there are other edges towards the receiving node
 ## try intervention on some other nodes that have edges towards the receving node as well
 ## or because the original data is "bad"
 ## how do we determine if intervention is "effective"?
 ## 50/0? 40/5? 30/10? 20/5?
-vfix.rev <- rep(revnodes[sample(length(revnodes))], 20)
-# test.rev0 <- maintest(g, vfix.rev, N = 50)
-test.rev <- maintest(g, vfix.rev, N = 50, originaldata = test$data, originalvfix = test$vfix)
+vfix.rev <- rep(revnodes[sample(length(revnodes))], 50)
+# test.rev0 <- maintest(g, vfix.rev, N = 20, lambdas.length = 50)
+test.rev <- maintest(g, vfix.rev, N = 5, lambdas.length = 50, originaldata = test$data, originalvfix = test$vfix)
 
 colMeans(test.rev$metric)
 apply(test.rev$metric, 2, sd)

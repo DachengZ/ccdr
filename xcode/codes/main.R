@@ -1,6 +1,7 @@
 # install.packages("devtools")
 # library(devtools)
 # if(devtools::find_rtools()) devtools::install_github("itsrainingdata/ccdr")
+# if(devtools::find_rtools()) devtools::install_github("DachengZ/ccdr")
 # library(ccdri) ## manually build this package and load
 
 setwd("~/ccdr/xcode/codes") ## change if necessary
@@ -30,8 +31,8 @@ source("maintest.R") ## main test
 
 ### Set up the model parameters
 nn <- 20                # How many samples to draw? ## this will be overridden if vfix specified
-pp <- 50              # How many nodes in the DAG?
-num.edges <- 50       # How many *expected* edges in the DAG?
+pp <- 100              # How many nodes in the DAG?
+num.edges <- 150       # How many *expected* edges in the DAG?
 ss <- num.edges / pp    # This is the expected number of parents *per node*
 
 ### Generate a random DAG using the pcalg method randomDAG
@@ -50,7 +51,7 @@ apply(test$metric, 2, sd)
 ## intervention on all points
 vfix <- sample(1:(pp+1), nn, replace = T)
 # test1 <- maintest(g, vfix, N = N)
-test1 <- maintest(g, vfix, N = 1, originaldata = test$data)
+test1 <- maintest(g, vfix, N = 50, originaldata = test$data)
 
 ## focus on reversed edges
 ## get edges with fewer true estimates and many more reversed estimates
@@ -65,15 +66,15 @@ summarynewtest(test1, tedge0)
 # summarynewtest(test, redge1)
 
 ## fix -outgoing- nodes from reversed edges
-## revnodes <- c(redge0[, 1], redge0[, 2]) ## unique?
+revnodes <- c(redge0[, 1], redge0[, 2]) ## unique?
 ## revnodes <- c(15, 19)
-## for(j in revnodes) {
-##     revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
-## }
-revnodes <- c(1, 4, 5, 6, 10, 17, 20) # change this to whatever nodes we want to add intervention
-vfix.rev <- rep(revnodes[sample(length(revnodes))], nn / 2)
-# test.rev <- maintest(g, vfix.rev, N = N)
-test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data)
+for(j in revnodes) {
+    revnodes <- c(revnodes, as.integer(inEdges(as.character(j), g)[[1]]))
+}
+# revnodes <- c(4, 40, 13, 39, 47) # change this to whatever nodes we want to add intervention
+vfix.rev <- rep(revnodes[sample(length(revnodes))], 100)
+# test.rev2 <- maintest(g, vfix.rev, N = 10)
+test.rev <- maintest(g, vfix.rev, N = N, originaldata = test$data, originalvfix = test$vfix)
 
 colMeans(test.rev$metric)
 apply(test.rev$metric, 2, sd)
