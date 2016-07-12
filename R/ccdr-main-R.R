@@ -17,7 +17,7 @@
 #
 
 ###--- These two lines are necessary to import the auto-generated Rcpp methods in RcppExports.R---###
-#' @useDynLib ccdr
+#' @useDynLib ccdri
 #' @importFrom Rcpp sourceCpp
 NULL
 
