@@ -99,14 +99,21 @@ cor_vector_intervention <- function(X, intervention = NULL) {
     pp <- ncol(X)
     if(!is.null(intervention)) {
         if(length(intervention) != nrow(X)) stop("Intervention size does not match")
-    } else intervention <- rep(pp + 1, nrow(X))
+    } else intervention <- as.integer(rep(pp + 1, nrow(X)))
 
-    cors <- vector("list", pp) ## change from pp+1 to pp
+    ivj <- sort(unique(intervention)) # all the j's that has intervention (including pp+1)
+    len <- length(ivj)
+    cors <- vector("list", len)
 
-    for(j in 1:pp) {
-        corsj <- cor(X[intervention != j, ])
-        cors[[j]] <- corsj[upper.tri(corsj, diag = TRUE)]
+    indexj <- as.integer(rep(len - 1, pp + 1))
+    if(len > 1) for(j in 1:(len - 1)) {
+        jj <- ivj[j]
+        indexj[jj] <- j - 1
+        corsjj <- cor(X[intervention != jj, ])
+        cors[[j]] <- corsjj[upper.tri(corsjj, diag = TRUE)]
     }
+    corsjj <- cor(X[intervention == pp + 1, ])
+    cors[[len]] <- corsjj[upper.tri(corsjj, diag = TRUE)]
     cors <- unlist(cors)
-    return(cors)
+    return(list(cors = cors, indexj = indexj))
 } # END .COR_VECTOR_INTERVETION

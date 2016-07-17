@@ -58,6 +58,7 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,    // a
                                                                             // now longer due to intervention added
                                         SparseBlockMatrix betas,            // initial guess of beta matrix
                                         const std::vector<int>& nj,         // # of rows where node j is not fixed
+                                        const std::vector<int>& indexj,
                                         const std::vector<double>& aj,
                                         const std::vector<double>& lambdas, // vector containing the grid of regularization parameters to be tested
                                         const std::vector<double>& params,  // vector containing user-defined parameters: {gamma, eps, maxIters, alpha}
@@ -69,6 +70,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,   // array contain
                                                                 // now longer due to intervention added
                              SparseBlockMatrix betas,           // initial guess of beta matrix
                              const std::vector<int>& nj,        // # of rows where node j is not fixed
+                             const std::vector<int>& indexj,
                              const std::vector<double>& aj,
                              const double lambda,               // value of regularization parameter
                              const std::vector<double>& params, // vector containing user-defined parameters: {gamma, eps, maxIters, alpha}
@@ -81,10 +83,11 @@ void computeEdgeLoss(const double betaUpdate,           // proposed new value of
                      const unsigned int b,              // terminal node (i.e. update beta_ab)
                      const double lambda,               // value of regularization parameter
                      const std::vector<int>& nj,        // # of rows where node j is not fixed
+                     const std::vector<int>& indexj,
                      const std::vector<double>& aj,
                      SparseBlockMatrix& betas,          // current value of beta matrix
-                     //const PenaltyFunction& pen,        // penalty function
-                     const double gammaMCP,
+                     // const PenaltyFunction& pen,        // penalty function
+                     const double gammaMCP,             // for fleible penalty parameters
                      const std::vector<double>& cors,   // array containing the correlations between predictors
                      double S[],                        // values of the loglikelihood function in the given block
                      const int verbose                  // binary variable to specify whether or not to print progress reports
@@ -93,6 +96,7 @@ void computeEdgeLoss(const double betaUpdate,           // proposed new value of
 // prototype for concaveCDInit
 void concaveCDInit(const double lambda,                         // value of regularization parameter
                    const std::vector<int>& nj,                  // # of rows where node j is not fixed
+                   const std::vector<int>& indexj,
                    const std::vector<double>& aj,
                    SparseBlockMatrix& betas,                    // current value of beta matrix
                    CCDrAlgorithm& alg,                          // CCDrAlgorithm object for this run
@@ -105,10 +109,11 @@ void concaveCDInit(const double lambda,                         // value of regu
 // prototype for concaveCD
 void concaveCD(const double lambda,                             // value of regularization parameter
                const std::vector<int>& nj,                      // # of rows where node j is not fixed
+               const std::vector<int>& indexj,
                const std::vector<double>& aj,
                SparseBlockMatrix& betas,                        // current value of beta matrix
                CCDrAlgorithm& alg,                              // CCDrAlgorithm object for this run
-               //const PenaltyFunction& pen,                      // penalty function
+               // const PenaltyFunction& pen,                      // penalty function
                const double gammaMCP,
                const std::vector<double>& cors,                 // array containing the correlations between predictors
                const int verbose                                // binary variable to specify whether or not to print progress reports
@@ -119,9 +124,10 @@ double singleUpdate(const unsigned int a,                       // initial node 
                     const unsigned int b,                       // terminal node (i.e. update beta_ab)
                     const double lambda,                        // value of regularization parameter
                     const std::vector<int>& nj,                 // # of rows where node j is not fixed
+                    const std::vector<int>& indexj,
                     const std::vector<double>& aj,
                     const SparseBlockMatrix& betas,             // current value of beta matrix
-                    //const PenaltyFunction& pen,                 // penalty function
+                    // const PenaltyFunction& pen,                 // penalty function
                     const double gammaMCP,
                     const std::vector<double>& cors,            // array containing the correlations between predictors
                     const int verbose                           // binary variable to specify whether or not to print progress reports
@@ -132,9 +138,10 @@ double singleUpdateV(const unsigned int a,                       // initial node
                      const unsigned int b,                       // terminal node (i.e. update beta_ab)
                      const double lambda,                        // value of regularization parameter
                      const std::vector<int>& nj,                 // # of rows where node j is not fixed
+                     const std::vector<int>& indexj,
                      const std::vector<double>& aj,
                      SparseBlockMatrix& betas,                   // current value of beta matrix
-                     //const PenaltyFunction& pen,                 // penalty function
+                     // const PenaltyFunction& pen,                 // penalty function
                      const double gammaMCP,
                      const std::vector<double>& cors,            // array containing the correlations between predictors
                      double S[],                                 // for storing the values of S1, S2
@@ -166,6 +173,7 @@ bool checkCycleSparse(const int node,                    // number of nodes in g
 std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
                                         SparseBlockMatrix betas,
                                         const std::vector<int>& nj, // added nj
+                                        const std::vector<int>& indexj,
                                         const std::vector<double>& aj,
                                         const std::vector<double>& lambdas,
                                         const std::vector<double>& params,
@@ -197,7 +205,7 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
 
         // To save memory, simply overwrite the same object (betas)
         // After each call to singleCCDr, we push_back the estimated object to grid_betas so there is no loss of data
-        betas = singleCCDr(cors, betas, nj, aj, lambda, params, verbose); // added nj
+        betas = singleCCDr(cors, betas, nj, indexj, aj, lambda, params, verbose); // added nj
         grid_betas.push_back(betas);
 
         //--- VERBOSE ONLY ---//
@@ -244,6 +252,7 @@ std::vector<SparseBlockMatrix> gridCCDr(const std::vector<double>& cors,
 SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
                              SparseBlockMatrix betas,
                              const std::vector<int>& nj, // added nj
+                             const std::vector<int>& indexj,
                              const std::vector<double>& aj,
                              const double lambda,
                              const std::vector<double>& params,
@@ -270,7 +279,8 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
     // Create some critical objects for the algorithm
     //
     CCDrAlgorithm CCDR = CCDrAlgorithm(maxIters, eps, alpha, betas.dim());  // to keep track of the algorithm's progress
-    //PenaltyFunction MCP = PenaltyFunction(gammaMCP);                        // to compute MCP function
+    // PenaltyFunction MCP = PenaltyFunction(gammaMCP);                        // to compute MCP function
+    // if(verbose) OUTPUT << "gammaMCP: " << gammaMCP << ". alpha: " << alpha;
 
     //
     // Begin the main part of the algorithm
@@ -289,7 +299,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
         CCDR.resetFlags();
 
         // This pass runs over all blocks
-        concaveCDInit(lambda, nj, aj, betas, CCDR, gammaMCP, cors, verbose);
+        concaveCDInit(lambda, nj, indexj, aj, betas, CCDR, gammaMCP, cors, verbose);
 
         //
         // ADD EXTRA ALGORITHM CHECKS HERE IF NEEDED
@@ -301,7 +311,7 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
             // block for running the rest of the CD iterations over the given active set
             int iters = 1; // we already ran one pass to determine the active set
             while( CCDR.moar(iters)){
-                concaveCD(lambda, nj, aj, betas, CCDR, gammaMCP, cors, verbose);
+                concaveCD(lambda, nj, indexj, aj, betas, CCDR, gammaMCP, cors, verbose);
                 iters++;
             }
         }
@@ -352,10 +362,11 @@ SparseBlockMatrix singleCCDr(const std::vector<double>& cors,
 //
 void concaveCDInit(const double lambda,
                    const std::vector<int>& nj, // added nj
+                   const std::vector<int>& indexj,
                    const std::vector<double>& aj,
                    SparseBlockMatrix& betas,
                    CCDrAlgorithm& alg,
-                   //const PenaltyFunction& pen,
+                   // const PenaltyFunction& pen,
                    const double gammaMCP,
                    const std::vector<double>& cors,
                    const int verbose
@@ -380,17 +391,17 @@ void concaveCDInit(const double lambda,
     //
     unsigned int pp = betas.dim(); // # of nodes; moved from below; save for easier access
     for(unsigned int j = 0; j < pp; ++j){
-
+        unsigned int j1 = indexj[j];
         double c = 0;
         for(unsigned int l = 0; l < betas.rowsizes(j); ++l){
             unsigned int row = betas.row(j, l);
             // so that row = i such that phi_{ij} != 0
             // now only use rows where node j is not fixed
             if(j <= row){
-                c += betas.value(j, l) * cors[j*pp*(pp+1)/2 + (j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
+                c += betas.value(j, l) * cors[j1*pp*(pp+1)/2 + (j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
             }
             else{
-                c += betas.value(j, l) * cors[j*pp*(pp+1)/2 + (row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
+                c += betas.value(j, l) * cors[j1*pp*(pp+1)/2 + (row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
             }
         }
 
@@ -422,9 +433,9 @@ void concaveCDInit(const double lambda,
     for(unsigned int i = 0; i < pp; ++i){
     	for(unsigned int j = i + 1; j < pp; ++j){
 
-            double betaUpdateij = singleUpdate(i, j, lambda, nj, aj, betas, gammaMCP, cors, verbose); // or only use nj[j]?
-            double betaUpdateji = singleUpdate(j, i, lambda, nj, aj, betas, gammaMCP, cors, verbose); // or only use nj[i]?
-            // if(verbose) OUTPUT << "updating betas: i=" << i << ", j = " << j << ", beta_ij=" << betaUpdateij << " and beta_ji = " << betaUpdateji << ". ";
+            double betaUpdateij = singleUpdate(i, j, lambda, nj, indexj, aj, betas, gammaMCP, cors, verbose); // or only use nj[j]?
+            double betaUpdateji = singleUpdate(j, i, lambda, nj, indexj, aj, betas, gammaMCP, cors, verbose); // or only use nj[i]?
+            // if(verbose) OUTPUT << "ccdri: updating betas: i = " << i << ", j = " << j << ", beta_ij = " << betaUpdateij << " and beta_ji = " << betaUpdateji << ".\n";
             bool hasCycleij = false, hasCycleji = false;
 
             if(fabs(betaUpdateij) > ZERO_THRESH){
@@ -440,13 +451,13 @@ void concaveCDInit(const double lambda,
 
             if(hasCycleij){
                 betaUpdateij = 0.0;
-                // if(verbose) OUTPUT << "we choose ji because ij induces a circle.\n";
+                // if(verbose) OUTPUT << "ccdri: we choose ji because ij induces a circle. ji score: " << betaUpdateji <<". \n";
             } else if(hasCycleji){
                 betaUpdateji = 0.0;
-                // if(verbose) OUTPUT << "we choose ij because ji induces a circle.\n";
+                // if(verbose) OUTPUT << "ccdri: we choose ij because ji induces a circle. ij score: " << betaUpdateij <<". \n";
             } else{
                 // single parameter update for beta_ji
-                computeEdgeLoss(betaUpdateji, j, i, lambda, nj, aj, betas, gammaMCP, cors, S, verbose);
+                computeEdgeLoss(betaUpdateji, j, i, lambda, nj, indexj, aj, betas, gammaMCP, cors, S, verbose);
                 double S1ji = S[0]; // Qi|betaji=0
                 double S2ji = S[1]; // Qi|betaji=betaUpdate
 
@@ -455,7 +466,7 @@ void concaveCDInit(const double lambda,
             #endif
 
                 // single parameter update for beta_ij
-                computeEdgeLoss(betaUpdateij, i, j, lambda, nj, aj, betas, gammaMCP, cors, S, verbose);
+                computeEdgeLoss(betaUpdateij, i, j, lambda, nj, indexj, aj, betas, gammaMCP, cors, S, verbose);
                 double S1ij = S[1]; // Qj|betaij=betaUpdate
                 double S2ij = S[0]; // Qj|betaij=0
 
@@ -471,14 +482,14 @@ void concaveCDInit(const double lambda,
                 if((S1ji + S1ij) <= (S2ji + S2ij)){
                     // If S1 <= S2, then beta_ij gets updated and beta_ji = 0
                     betaUpdateji = 0.0;
-                    // if(verbose) OUTPUT << "we choose ij because ji has higher score.\n";
+                    // if(verbose) OUTPUT << "ccdri: we choose ij because ji has higher score.\n";
 
                     // NOTE: Instead of updating the error here, update it after the SPUs have been computed
                     // and we are ready to update the sparse structure
                 } else{
                     // If S2 < S1, then beta_ji gets updated and beta_ij = 0
                     betaUpdateij = 0.0;
-                    // if(verbose) OUTPUT << "we choose ji because ij has higher score.\n";
+                    // if(verbose) OUTPUT << "ccdri: we choose ji because ij has higher score.\n";
 
                     // NOTE: Instead of updating the error here, update it after the SPUs have been computed
                     // and we are ready to update the sparse structure
@@ -606,10 +617,11 @@ void concaveCDInit(const double lambda,
 //
 void concaveCD(const double lambda,
                const std::vector<int>& nj,
+               const std::vector<int>& indexj,
                const std::vector<double>& aj,
                SparseBlockMatrix& betas,
                CCDrAlgorithm& alg,
-               //const PenaltyFunction& pen,
+               // const PenaltyFunction& pen,
                const double gammaMCP,
                const std::vector<double>& cors,
                const int verbose
@@ -633,15 +645,16 @@ void concaveCD(const double lambda,
     //
     unsigned int pp = betas.dim(); // moved from below
     for(unsigned int j = 0; j < pp; ++j){
+        unsigned int j1 = indexj[j];
         double c = 0;
         for(unsigned int l = 0; l < betas.rowsizes(j); ++l){
             unsigned int row = betas.row(j, l);
             // only uses rows where node j is not fixed
             if(j <= row){
-                c += betas.value(j, l) * cors[j*pp*(pp+1)/2 + (j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
+                c += betas.value(j, l) * cors[j1*pp*(pp+1)/2 + (j + row*(row+1)/2)]; // c += beta_ij * <xj,xi>
             }
             else{
-                c += betas.value(j, l) * cors[j*pp*(pp+1)/2 + (row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
+                c += betas.value(j, l) * cors[j1*pp*(pp+1)/2 + (row + j*(j+1)/2)];   // c += beta_ij * <xj,xi> (also)
             }
         }
 
@@ -682,9 +695,9 @@ void concaveCD(const double lambda,
 
             // only update the nonzero edge
             if(fabs(betakj) > ZERO_THRESH){
-                betaUpdateij = singleUpdate(i, j, lambda, nj, aj, betas, gammaMCP, cors, verbose);
+                betaUpdateij = singleUpdate(i, j, lambda, nj, indexj, aj, betas, gammaMCP, cors, verbose);
             } else if(fabs(betajk) > ZERO_THRESH){
-                betaUpdateji = singleUpdate(j, i, lambda, nj, aj, betas, gammaMCP, cors, verbose);
+                betaUpdateji = singleUpdate(j, i, lambda, nj, indexj, aj, betas, gammaMCP, cors, verbose);
             }
 
             //
@@ -723,9 +736,10 @@ double singleUpdate(const unsigned int a,
                     const unsigned int b,
                     const double lambda,
                     const std::vector<int>& nj,
+                    const std::vector<int>& indexj,
                     const std::vector<double>& aj,
                     const SparseBlockMatrix& betas,
-                    //const PenaltyFunction& pen,
+                    // const PenaltyFunction& pen,
                     const double gammaMCP,
                     const std::vector<double>& cors,
                     const int verbose
@@ -737,6 +751,7 @@ double singleUpdate(const unsigned int a,
     #endif
 
     unsigned int pp = betas.dim(); // for easier access
+    unsigned int b1 = indexj[b];
     double betaUpdate = 0; // initialize eventual return value
 
     //
@@ -749,20 +764,20 @@ double singleUpdate(const unsigned int a,
 
     // Get the value: \rho_j*<xk,xj>
     if(a <= b){
-        res_ab = betas.sigma(b) * cors[b*pp*(pp+1)/2 + (a + b*(b+1)/2)];
+        res_ab = betas.sigma(b) * cors[b1*pp*(pp+1)/2 + (a + b*(b+1)/2)];
     }
     else{
-        res_ab = betas.sigma(b) * cors[b*pp*(pp+1)/2 + (b + a*(a+1)/2)];
+        res_ab = betas.sigma(b) * cors[b1*pp*(pp+1)/2 + (b + a*(a+1)/2)];
     }
 
     // Subtract the terms \phi_ij <xi,xk>
     for(unsigned int i = 0; i < betas.rowsizes(b); ++i){
         unsigned int row = betas.row(b, i);
         if(row < a){
-            res_ab -= cors[b*pp*(pp+1)/2 + (row + a*(a+1)/2)] * betas.value(b, i);
+            res_ab -= cors[b1*pp*(pp+1)/2 + (row + a*(a+1)/2)] * betas.value(b, i);
         }
         else if(row > a){ // i=a is excluded
-            res_ab -= cors[b*pp*(pp+1)/2 + (a + row*(row+1)/2)] * betas.value(b, i);
+            res_ab -= cors[b1*pp*(pp+1)/2 + (a + row*(row+1)/2)] * betas.value(b, i);
         }
     }
 
@@ -771,10 +786,8 @@ double singleUpdate(const unsigned int a,
     //   associated with the penalty function at the residual factor res_ab given the fixed
     //   values of gamma and lambda.
     //
-    // PenaltyFunction pen = PenaltyFunction(gammaMCP / nj[b]);
-    // betaUpdate = pen.threshold(res_ab, nj[b] * lambda);
     PenaltyFunction pen = PenaltyFunction(gammaMCP / aj[b]);
-    betaUpdate = pen.threshold(res_ab, aj[b] * lambda);
+    betaUpdate = pen.threshold(res_ab, aj[b] * lambda); // aj[b] * lambda ???
     #ifdef _DEBUG_ON_
         FILE_LOG(logDEBUG2) << "Function call: singleUpdate(" << a << ", " << b << ") with lambda = " << lambda << "  /  res_ab = " << res_ab;
     #endif
@@ -790,9 +803,10 @@ void computeEdgeLoss(const double betaUpdate,
                      const unsigned int b,
                      const double lambda,
                      const std::vector<int>& nj,
+                     const std::vector<int>& indexj,
                      const std::vector<double>& aj,
                      SparseBlockMatrix& betas,
-                     //const PenaltyFunction& pen,
+                     // const PenaltyFunction& pen,
                      const double gammaMCP,
                      const std::vector<double>& cors,
                      double S[],
@@ -827,6 +841,7 @@ void computeEdgeLoss(const double betaUpdate,
 
     // Compute the value of the loss
     unsigned int pp = betas.dim();
+    unsigned int b1 = indexj[b];
     loss = betas.sigma(b) * betas.sigma(b);
     for(unsigned int m = 0; m < betas.rowsizes(b); ++m){
         unsigned int row_m = betas.row(b, m);
@@ -835,16 +850,16 @@ void computeEdgeLoss(const double betaUpdate,
             unsigned int row_n = betas.row(b, n);
             // not quite sure if it is b here.
             if(row_m <= row_n){
-                loss += cors[b*pp*(pp+1)/2 + (row_m + row_n*(row_n+1)/2)] * betas.value(b, m) * betas.value(b, n);
+                loss += cors[b1*pp*(pp+1)/2 + (row_m + row_n*(row_n+1)/2)] * betas.value(b, m) * betas.value(b, n);
             } else{
-                loss += cors[b*pp*(pp+1)/2 + (row_n + row_m*(row_m+1)/2)] * betas.value(b, m) * betas.value(b, n);
+                loss += cors[b1*pp*(pp+1)/2 + (row_n + row_m*(row_m+1)/2)] * betas.value(b, m) * betas.value(b, n);
             }
         }
 
         if(row_m <= b){
-            loss -= 2.0 * betas.sigma(b) * cors[b*pp*(pp+1)/2 + (row_m + b*(b+1)/2)] * betas.value(b, m);
+            loss -= 2.0 * betas.sigma(b) * cors[b1*pp*(pp+1)/2 + (row_m + b*(b+1)/2)] * betas.value(b, m);
         } else{
-            loss -= 2.0 * betas.sigma(b) * cors[b*pp*(pp+1)/2 + (b + row_m*(row_m+1)/2)] * betas.value(b, m);
+            loss -= 2.0 * betas.sigma(b) * cors[b1*pp*(pp+1)/2 + (b + row_m*(row_m+1)/2)] * betas.value(b, m);
         }
     }
 
@@ -852,7 +867,7 @@ void computeEdgeLoss(const double betaUpdate,
     penalty = 0;
     PenaltyFunction pen = PenaltyFunction(gammaMCP / aj[b]);
     for(unsigned int i = 0; i < betas.rowsizes(b); ++i){
-        penalty += pen.p(fabs(betas.value(b, i)), aj[b] * lambda);
+        penalty += pen.p(fabs(betas.value(b, i)), aj[b] * lambda); // aj[b] * lambda???
     }
     //penalty -= pen.p(fabs(betas[(pp * b) + b]), lambda); // ignore contribution from beta_bb (should be zero anyway!!!)
 
@@ -877,19 +892,19 @@ void computeEdgeLoss(const double betaUpdate,
             unsigned int row = betas.row(b, i);
 
             if(row < a){
-                S[1] += 2.0 * cors[b*pp*(pp+1)/2 + (row + a*(a+1)/2)] * betas.value(b, i) * betaUpdate;
+                S[1] += 2.0 * cors[b1*pp*(pp+1)/2 + (row + a*(a+1)/2)] * betas.value(b, i) * betaUpdate;
             }
             else if(i > a){ // case when i = a is handled separately below
-                S[1] += 2.0 * cors[b*pp*(pp+1)/2 + (a + row*(row+1)/2)] * betas.value(b, i) * betaUpdate;
+                S[1] += 2.0 * cors[b1*pp*(pp+1)/2 + (a + row*(row+1)/2)] * betas.value(b, i) * betaUpdate;
             }
         }
-        S[1] += cors[b*pp*(pp+1)/2 + (a + a*(a+1)/2)] * betaUpdate * betaUpdate;
+        S[1] += cors[b1*pp*(pp+1)/2 + (a + a*(a+1)/2)] * betaUpdate * betaUpdate;
 
         if(a <= b){
-            S[1] -= 2.0 * betas.sigma(b) * cors[b*pp*(pp+1)/2 + (a + b*(b+1)/2)] * betaUpdate;
+            S[1] -= 2.0 * betas.sigma(b) * cors[b1*pp*(pp+1)/2 + (a + b*(b+1)/2)] * betaUpdate;
         }
         else{
-            S[1] -= 2.0 * betas.sigma(b) * cors[b*pp*(pp+1)/2 + (b + a*(a+1)/2)] * betaUpdate;
+            S[1] -= 2.0 * betas.sigma(b) * cors[b1*pp*(pp+1)/2 + (b + a*(a+1)/2)] * betaUpdate;
         }
 
         // Of course the penalty decomposes like the loss as well, so we can just add

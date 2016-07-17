@@ -20,15 +20,14 @@ compare.graph <- function(g.est, g.true, o = NULL) {
     for(j in 1:nn) {
         lj <- length(estL[[j]])
         P <- P + lj ## P: number of estimated (predicted) edges
-        if(lj != 0) {
-            for(i in estL[[j]]) {
-                if(i %in% trueL[[j]]) TP <- TP + 1 ## TP: number of true positives
-                else FP <- FP + 1 ## FP: number of false positives
+        if(lj != 0) for(i in estL[[j]]) {
+            if(i %in% trueL[[j]]) TP <- TP + 1 ## TP: number of true positives
+            else {
                 if(j %in% trueL[[i]]) R <- R + 1 ## R: number of reversed edges
+                else FP <- FP + 1 ## FP: number of false positives
             }
         }
     }
-    FP <- FP - R
     Tedge <- sum(sapply(trueL, length))
     ### Fedge <- pp * (pp - 1) / 2 - Tedge
     ### fpr = (R + FP) / Fedge

@@ -123,13 +123,14 @@ ccdri_call <- function(data,
     if(count_nas(data) > 0) stop(paste0(count_nas(data), " missing values detected!"))
 
     ### Get the dimensions of the data matrix
-    nn <- as.integer(nrow(data))
-    pp <- as.integer(ncol(data))
+    nn <- nrow(data)
+    pp <- ncol(data)
 
     ## check intervention
     if(!is.null(intervention)) {
-        if(length(intervention) != nn) stop("Intervention size does not match!")
-        if(any(!is.integer(intervention)) || any(intervention <= 0) || any(intervention > pp + 1)) stop(paste0("Intervention labels are incorrect:", intervention))
+        if(length(intervention) != nn) stop("Intervention size does not match.")
+        if(any(!is.integer(intervention))) stop("Intervention labels are not integers.")
+        if(any(intervention <= 0) || any(intervention > pp + 1)) stop("Intervention out of range.")
     } else intervention <- rep(pp + 1, nn)
 
     nj <- rep(0, pp)
@@ -195,7 +196,9 @@ ccdri_call <- function(data,
     t1.cor <- proc.time()[3]
     #     cors <- cor(data)
     #     cors <- cors[upper.tri(cors, diag = TRUE)]
-    cors <- cor_vector_intervention(data, intervention) ## cors <- cor_vector(data)
+    corlist <- cor_vector_intervention(data, intervention) ## cors <- cor_vector(data)
+    cors <- corlist$cors
+    indexj <- corlist$indexj
     t2.cor <- proc.time()[3]
 
     fit <- ccdri_gridR(cors = cors, ## now a longer vector
@@ -203,6 +206,7 @@ ccdri_call <- function(data,
                       as.integer(pp),
                       as.integer(nn), ## can we replace nn with nj now?
                       as.integer(nj), ## added nj
+                      as.integer(indexj),
                       betas,
                       as.numeric(lambdas),
                       as.numeric(gamma),
@@ -222,6 +226,7 @@ ccdri_gridR <- function(cors, ## now a longer vector
                        # data,
                        pp, nn, ##
                        nj, ## added nj
+                       indexj,
                        betas,
                        lambdas,
                        gamma,
@@ -246,6 +251,7 @@ ccdri_gridR <- function(cors, ## now a longer vector
         ccdr.out[[i]] <- ccdri_singleR(cors = cors, ## now a longer vector
                                       pp, nn, ##
                                       nj, ## now added nj
+                                      indexj,
                                       betas,
                                       lambdas[i],
                                       gamma = gamma,
@@ -297,6 +303,7 @@ ccdri_gridR <- function(cors, ## now a longer vector
 ccdri_singleR <- function(cors, ## now a longer vector
                          pp, nn, ## remove nn?
                          nj, ## added nj
+                         indexj,
                          betas,
                          lambda,
                          gamma,
@@ -308,7 +315,7 @@ ccdri_singleR <- function(cors, ## now a longer vector
 
     ### Check cors
     if(!is.numeric(cors)) stop("cors must be a numeric vector!")
-    if(length(cors) != pp*pp*(pp+1)/2) stop(paste0("cors has incorrect length: Expected length = ", pp*pp*(pp+1)/2, " input length = ", length(cors)))
+    if(length(cors) != length(unique(indexj))*pp*(pp+1)/2) stop(paste0("cors has incorrect length: Expected length = ", pp*pp*(pp+1)/2, " input length = ", length(cors)))
     ## longer due to intervention
 
     ### Check dimension parameters
@@ -355,6 +362,7 @@ ccdri_singleR <- function(cors, ## now a longer vector
     ccdr.out <- singleCCDr(cors,
                            betas,
                            nj, ## now added nj
+                           indexj,
                            aj,
                            lambda,
                            c(gamma, eps, maxIters, alpha),
