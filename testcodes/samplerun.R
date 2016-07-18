@@ -33,7 +33,6 @@ ccdrtest <- function(nn, pp, num.edges, vfix = NULL, gamma = 2, lambdas.length =
 
     ## To record performance
     metric <- matrix(0, 6, 10) ## to record performance metrics
-    colnames(metric) <- c("P", "TP", "R", "FP", "TPR", "FDR", "SHD", "user", "system", "elapsed")
 
     ### Generate a random DAG using the pcalg method randomDAG
     beta.min <- 0.5
@@ -89,6 +88,8 @@ ccdrtest <- function(nn, pp, num.edges, vfix = NULL, gamma = 2, lambdas.length =
     metric[3, 1:7] <- compare.graph(mmhc.graph, g1)
     metric[3, 8:10] <- (proc.time() - ptm)[1:3]
 
+    true.edges <- metric[1, 2] - metric[1, 4] + metric[1, 7]
+
     ### Intervention data
     if(is.null(vfix)) vfix <- sample(pp, nn, replace = T)
     nn1 <- length(vfix)
@@ -132,40 +133,57 @@ ccdrtest <- function(nn, pp, num.edges, vfix = NULL, gamma = 2, lambdas.length =
     mmhc.graph <- as.graphNEL(mmhc.fit)
     metric[6, 1:7] <- compare.graph(mmhc.graph, g1)
     metric[6, 8:10] <- (proc.time() - ptm)[1:3]
-    return(metric)
+
+    namelist <- rep(c("CCDr", "CCDri", "MMHC"), 2)
+    nnlist <- as.integer(c(rep(nn, 3), rep(length(vfix), 3)))
+    colnames(metric) <- c("P", "TP", "R", "FP", "TPR", "FDR", "SHD",
+                          "user", "system", "elapsed")
+    # pplist <- as.integer(rep(pp, 6))
+    # nelist <- as.integer(rep(num.edges, 6))
+    return(data.frame(name = namelist, nn = nnlist, pp, num.edges, true.edges, metric))
 }
 
-m <- array(0, dim = c(10, 6, 10))
-m[1, , ] <- ccdrtest(nn = 50, pp = 10, num.edges = 10, vfix = sample(10, 100, T))
-m[2, , ] <- ccdrtest(nn = 50, pp = 20, num.edges = 20, vfix = sample(20, 100, T))
-m[3, , ] <- ccdrtest(nn = 50, pp = 50, num.edges = 20, vfix = sample(50, 100, T))
-m[4, , ] <- ccdrtest(nn = 100, pp = 50, num.edges = 20, vfix = sample(50, 200, T))
-m[5, , ] <- ccdrtest(nn = 100, pp = 50, num.edges = 50, vfix = sample(50, 200, T))
-m[6, , ] <- ccdrtest(nn = 100, pp = 100, num.edges = 50, vfix = sample(100, 200, T))
-m[7, , ] <- ccdrtest(nn = 100, pp = 100, num.edges = 50, vfix = sample(100, 500, T))
-m[8, , ] <- ccdrtest(nn = 200, pp = 200, num.edges = 50, vfix = sample(200, 500, T))
-m[9, , ] <- ccdrtest(nn = 200, pp = 200, num.edges = 100, vfix = sample(200, 500, T))
-m[10, , ] <- ccdrtest(nn = 200, pp = 200, num.edges = 200, vfix = sample(200, 500, T))
-#m[10, , ] <- ccdrtest(nn = 500, pp = 500, num.edges = 500, vfix = sample(500, 1000, T))
+m <- vector("list", 10)
+
+m[[1]] <- ccdrtest(nn = 50, pp = 10, num.edges = 10, vfix = sample(10, 100, T))
+m[[2]] <- ccdrtest(nn = 50, pp = 20, num.edges = 20, vfix = sample(20, 100, T))
+m[[3]] <- ccdrtest(nn = 50, pp = 50, num.edges = 20, vfix = sample(50, 100, T))
+m[[4]] <- ccdrtest(nn = 100, pp = 50, num.edges = 20, vfix = sample(50, 200, T))
+m[[5]] <- ccdrtest(nn = 100, pp = 50, num.edges = 50, vfix = sample(50, 200, T))
+m[[6]] <- ccdrtest(nn = 100, pp = 100, num.edges = 50, vfix = sample(100, 200, T))
+m[[7]] <- ccdrtest(nn = 100, pp = 100, num.edges = 50, vfix = sample(100, 500, T))
+m[[8]] <- ccdrtest(nn = 200, pp = 200, num.edges = 50, vfix = sample(200, 500, T))
+m[[9]] <- ccdrtest(nn = 200, pp = 200, num.edges = 100, vfix = sample(200, 500, T))
+m[[10]] <- ccdrtest(nn = 200, pp = 200, num.edges = 200, vfix = sample(200, 500, T))
+
+# The following setting takes over 5 minutes on intervention data.
+# m[[10]] <- ccdrtest(nn = 500, pp = 500, num.edges = 500, vfix = sample(500, 1000, T))
+
+getm <- function(row, column) {
+    return(sapply(m, "[", row, column))
+}
+
+## Check one simulation:
+# m[[5]]
 
 pdf(file = "obs.pdf")
     par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
-    plot(m[, 3, 10], type = "p", pch = 24, main = "Timing Observational Data", xlab = "test index", ylab = "Time elapsed (seconds)")
-    points(m[, 3, 10], type = "l", lty = 3)
-    points(m[, 1, 10], type = "p", pch = 1)
-    points(m[, 1, 10], type = "l", lty = 1)
-    points(m[, 2, 10], type = "p", pch = 20)
-    points(m[, 2, 10], type = "l", lty = 2)
-    legend(2, 2.5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
+    plot(getm(1, 15), type = "p", pch = 1, main = "Timing Observational Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
+    points(getm(1, 15), type = "l", lty = 1)
+    points(getm(2, 15), type = "p", pch = 20)
+    points(getm(2, 15), type = "l", lty = 2)
+    points(getm(3, 15), type = "p", pch = 24)
+    points(getm(3, 15), type = "l", lty = 3)
+    legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
 dev.off()
 
 pdf(file = "itv.pdf")
     par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
-    plot(m[, 5, 10], type = "p", pch = 20, main = "Timing Interventional Data", xlab = "test index", ylab = "Time elapsed (seconds)")
-    points(m[, 5, 10], type = "l", lty = 2)
-    points(m[, 4, 10], type = "p", pch = 1)
-    points(m[, 4, 10], type = "l", lty = 1)
-    points(m[, 6, 10], type = "p", pch = 24)
-    points(m[, 6, 10], type = "l", lty = 3)
-    legend(2, 4, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
+    plot(getm(4, 15), type = "p", pch = 1, main = "Timing Interventional Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
+    points(getm(4, 15), type = "l", lty = 1)
+    points(getm(5, 15), type = "p", pch = 20)
+    points(getm(5, 15), type = "l", lty = 2)
+    points(getm(6, 15), type = "p", pch = 24)
+    points(getm(6, 15), type = "l", lty = 3)
+    legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
 dev.off()
