@@ -17,7 +17,7 @@ source("compare.R") ## compare graphs. different from `compareGraphs`
 source("maintest.R") ## main test
 
 ### Test function wrapper
-ccdrtest <- function(nn, pp, num.edges, itvtimes = NA, vfix = NULL, gamma = 2, lambdas.length = 20) {
+ccdrtest <- function(nn, pp, num.edges, itvtimes = NULL, vfix = NULL, gamma = 2, lambdas.length = 20) {
     # Goal: Based on a same graph, we generata two sets of data,
     #       one observational, one with intervention
     #       And test CCDr, CCDri, PC on them.
@@ -92,8 +92,8 @@ ccdrtest <- function(nn, pp, num.edges, itvtimes = NA, vfix = NULL, gamma = 2, l
 
     ### Intervention data
     if(is.null(vfix)) {
-        if(is.na(itvtimes)) stop("Please provide either vfix or itvtimes")
-        else vfix <- rep(sample(pp), itvtimes)
+        if(is.null(itvtimes)) itvtimes <- floor(nn / pp)
+        vfix <- rep(sample(pp), itvtimes)
     } else itvtimes <- paste("~", length(vfix) / pp, sep = "")
     # it seems that, here itvtimes can be non-integer;
     # R will replace itvtimes by floor(itvtimes)
@@ -156,8 +156,12 @@ ccdrtest <- function(nn, pp, num.edges, itvtimes = NA, vfix = NULL, gamma = 2, l
 
 m <- vector("list", 10)
 
+# specify either
+# 1) itvtimes: sample(pp) and replicate, so intervention times per node is the same
+# 2) vfix: a vector of node labels. Note: If intervention times per node is uneven,
+#          ccdri does not work quite well (why?)
 m[[1]] <- ccdrtest(nn = 20, pp = 10, num.edges = 10, itvtimes = 2)
-m[[2]] <- ccdrtest(nn = 50, pp = 10, num.edges = 10, itvtimes = 5)
+m[[2]] <- ccdrtest(nn = 20, pp = 20, num.edges = 10, itvtimes = 2)
 m[[3]] <- ccdrtest(nn = 50, pp = 20, num.edges = 20, itvtimes = 2)
 m[[4]] <- ccdrtest(nn = 100, pp = 20, num.edges = 20, itvtimes = 5)
 m[[5]] <- ccdrtest(nn = 100, pp = 50, num.edges = 20, itvtimes = 2)
@@ -181,23 +185,23 @@ getm <- function(row, column) {
 # m[[5]]
 
 pdf(file = "obs.pdf")
-par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
-plot(getm(1, 14), type = "p", pch = 1, main = "Timing Observational Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
-points(getm(1, 14), type = "l", lty = 1)
-points(getm(2, 14), type = "p", pch = 20)
-points(getm(2, 14), type = "l", lty = 2)
-points(getm(3, 14), type = "p", pch = 24)
-points(getm(3, 14), type = "l", lty = 3)
-legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
+    par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
+    plot(getm(1, 15), type = "p", pch = 1, main = "Timing Observational Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
+    points(getm(1, 15), type = "l", lty = 1)
+    points(getm(2, 15), type = "p", pch = 20)
+    points(getm(2, 15), type = "l", lty = 2)
+    points(getm(3, 15), type = "p", pch = 24)
+    points(getm(3, 15), type = "l", lty = 3)
+    legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
 dev.off()
 
 pdf(file = "itv.pdf")
-par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
-plot(getm(4, 14), type = "p", pch = 1, main = "Timing Interventional Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
-points(getm(4, 14), type = "l", lty = 1)
-points(getm(5, 14), type = "p", pch = 20)
-points(getm(5, 14), type = "l", lty = 2)
-points(getm(6, 14), type = "p", pch = 24)
-points(getm(6, 14), type = "l", lty = 3)
-legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
+    par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
+    plot(getm(4, 15), type = "p", pch = 1, main = "Timing Interventional Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
+    points(getm(4, 15), type = "l", lty = 1)
+    points(getm(5, 15), type = "p", pch = 20)
+    points(getm(5, 15), type = "l", lty = 2)
+    points(getm(6, 15), type = "p", pch = 24)
+    points(getm(6, 15), type = "l", lty = 3)
+    legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
 dev.off()
