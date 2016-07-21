@@ -29,10 +29,11 @@ compare.graph <- function(g.est, g.true, o = NULL) {
         }
     }
     Tedge <- sum(sapply(trueL, length))
+    if(P == 0) fdr = 0 else fdr = (R + FP) / P
     ### Fedge <- pp * (pp - 1) / 2 - Tedge
     ### fpr = (R + FP) / Fedge
     ## SHD <- Tedge - TP + FP
-    return(c(p = P, tp = TP, r = R, fp = FP, tpr = TP / Tedge, fdr = (R + FP) / P, shd = Tedge - TP + FP))
+    return(c(p = P, tp = TP, r = R, fp = FP, tpr = TP / Tedge, fdr = fdr, shd = Tedge - TP + FP))
 }
 
 compare.cFg <- function(cF, g, o = NULL) {

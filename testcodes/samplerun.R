@@ -154,54 +154,62 @@ ccdrtest <- function(nn, pp, num.edges, itvtimes = NULL, vfix = NULL, gamma = 2,
                       metric))
 }
 
-m <- vector("list", 10)
+m <- vector("list", 50 * 15)
 
 # specify either
 # 1) itvtimes: sample(pp) and replicate, so intervention times per node is the same
 # 2) vfix: a vector of node labels. Note: If intervention times per node is uneven,
 #          ccdri does not work quite well (why?)
-m[[1]] <- ccdrtest(nn = 20, pp = 10, num.edges = 10, itvtimes = 2)
-m[[2]] <- ccdrtest(nn = 20, pp = 20, num.edges = 10, itvtimes = 2)
-m[[3]] <- ccdrtest(nn = 50, pp = 20, num.edges = 20, itvtimes = 2)
-m[[4]] <- ccdrtest(nn = 100, pp = 20, num.edges = 20, itvtimes = 5)
-m[[5]] <- ccdrtest(nn = 100, pp = 50, num.edges = 20, itvtimes = 2)
-m[[6]] <- ccdrtest(nn = 100, pp = 50, num.edges = 50, itvtimes = 2)
-m[[7]] <- ccdrtest(nn = 200, pp = 100, num.edges = 50, itvtimes = 2)
-m[[8]] <- ccdrtest(nn = 200, pp = 100, num.edges = 100, itvtimes = 2)
-m[[9]] <- ccdrtest(nn = 500, pp = 200, num.edges = 100, itvtimes = 2)
-m[[10]] <- ccdrtest(nn = 500, pp = 200, num.edges = 200, itvtimes = 2)
+
+for(i in    1:50) m[[i]] <- ccdrtest(nn = 20, pp = 10, num.edges =  5, itvtimes = 2)
+for(i in  51:100) m[[i]] <- ccdrtest(nn = 20, pp = 10, num.edges = 10, itvtimes = 2)
+for(i in 101:150) m[[i]] <- ccdrtest(nn = 20, pp = 10, num.edges = 20, itvtimes = 2)
+for(i in 151:200) m[[i]] <- ccdrtest(nn = 50, pp = 20, num.edges = 10, itvtimes = 2)
+for(i in 201:250) m[[i]] <- ccdrtest(nn = 50, pp = 20, num.edges = 20, itvtimes = 2)
+for(i in 251:300) m[[i]] <- ccdrtest(nn = 50, pp = 20, num.edges = 40, itvtimes = 2)
+for(i in 301:350) m[[i]] <- ccdrtest(nn = 100, pp = 50, num.edges = 25, itvtimes = 2)
+for(i in 351:400) m[[i]] <- ccdrtest(nn = 100, pp = 50, num.edges = 50, itvtimes = 2)
+for(i in 401:450) m[[i]] <- ccdrtest(nn = 100, pp = 50, num.edges = 100, itvtimes = 2)
+for(i in 451:500) m[[i]] <- ccdrtest(nn = 200, pp = 100, num.edges = 50, itvtimes = 2)
+for(i in 501:550) m[[i]] <- ccdrtest(nn = 200, pp = 100, num.edges = 100, itvtimes = 2)
+for(i in 551:600) m[[i]] <- ccdrtest(nn = 200, pp = 100, num.edges = 200, itvtimes = 2)
+for(i in 601:650) m[[i]] <- ccdrtest(nn = 500, pp = 200, num.edges = 100, itvtimes = 2)
+for(i in 651:700) m[[i]] <- ccdrtest(nn = 500, pp = 200, num.edges = 200, itvtimes = 2)
+for(i in 701:750) m[[i]] <- ccdrtest(nn = 500, pp = 200, num.edges = 400, itvtimes = 2)
+
+saveRDS(m, file = "ccdrtest.rds")
+
+# To average over one case:
+m9 <- cbind(m[[401]][, 1:6], Reduce('+', lapply(m[401:450], '[', , 7:15)) / 50)
 
 # CCDri performs well when intervention times is the same for each node (?)
 
 
-# The following setting takes over 5 minutes on intervention data.
-# m[[10]] <- ccdrtest(nn = 500, pp = 500, num.edges = 500, vfix = sample(500, 1000, T))
-
-getm <- function(row, column) {
-    return(sapply(m, "[", row, column))
-}
-
-## Check one simulation:
-# m[[5]]
-
-pdf(file = "obs.pdf")
-    par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
-    plot(getm(1, 15), type = "p", pch = 1, main = "Timing Observational Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
-    points(getm(1, 15), type = "l", lty = 1)
-    points(getm(2, 15), type = "p", pch = 20)
-    points(getm(2, 15), type = "l", lty = 2)
-    points(getm(3, 15), type = "p", pch = 24)
-    points(getm(3, 15), type = "l", lty = 3)
-    legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
-dev.off()
-
-pdf(file = "itv.pdf")
-    par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
-    plot(getm(4, 15), type = "p", pch = 1, main = "Timing Interventional Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
-    points(getm(4, 15), type = "l", lty = 1)
-    points(getm(5, 15), type = "p", pch = 20)
-    points(getm(5, 15), type = "l", lty = 2)
-    points(getm(6, 15), type = "p", pch = 24)
-    points(getm(6, 15), type = "l", lty = 3)
-    legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
-dev.off()
+# getm <- function(row, column) {
+#     return(sapply(m, "[", row, column))
+# }
+#
+# ## Check one simulation:
+# # m[[5]]
+#
+# pdf(file = "obs.pdf")
+#     par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
+#     plot(getm(1, 15), type = "p", pch = 1, main = "Timing Observational Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
+#     points(getm(1, 15), type = "l", lty = 1)
+#     points(getm(2, 15), type = "p", pch = 20)
+#     points(getm(2, 15), type = "l", lty = 2)
+#     points(getm(3, 15), type = "p", pch = 24)
+#     points(getm(3, 15), type = "l", lty = 3)
+#     legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
+# dev.off()
+#
+# pdf(file = "itv.pdf")
+#     par(oma = rep(0, 4), mar = c(4, 4, 2, 1))
+#     plot(getm(4, 15), type = "p", pch = 1, main = "Timing Interventional Data", xlab = "test index", ylab = "Time elapsed (seconds)", ylim = c(0, 5))
+#     points(getm(4, 15), type = "l", lty = 1)
+#     points(getm(5, 15), type = "p", pch = 20)
+#     points(getm(5, 15), type = "l", lty = 2)
+#     points(getm(6, 15), type = "p", pch = 24)
+#     points(getm(6, 15), type = "l", lty = 3)
+#     legend(1, 5, legend = c("CCDr", "CCDri", "MMHC"), lty = c(1, 2, 3), pch = c(1, 20, 24))
+# dev.off()
